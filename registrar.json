@@ -1,0 +1,406 @@
+{
+  "name": "DataTable",
+  "category": "data",
+  "description": "Enterprise data table with sticky column freezing, interactive column resizing, sorting, row pinning, and pagination.",
+  "module": "@consona/interface",
+  "filePath": "src/modules/core/components/data-table/data-table.tsx",
+  "semanticClass": "interface-data-table",
+  "dataComponent": "DataTable",
+  "props": {
+    "data": {
+      "name": "data",
+      "type": "T[]",
+      "optional": false,
+      "description": "Array of row records to display."
+    },
+    "columns": {
+      "name": "columns",
+      "type": "DataTableColumn<T>[]",
+      "optional": false,
+      "description": "Column definitions with sorting, filtering, and pinning metadata."
+    },
+    "children": {
+      "name": "children",
+      "type": "ReactNode | ((context: DataTableContextValue<T>) => ReactNode)",
+      "optional": true,
+      "description": "Optional custom child composition (using compound subcomponents or render prop). When omitted, renders default table layout."
+    },
+    "searchable": {
+      "name": "searchable",
+      "type": "boolean",
+      "optional": true,
+      "description": "Enable global search filter input. @default true"
+    },
+    "searchPlaceholder": {
+      "name": "searchPlaceholder",
+      "type": "string",
+      "optional": true,
+      "description": "Search input placeholder string."
+    },
+    "pagination": {
+      "name": "pagination",
+      "type": "boolean",
+      "optional": true,
+      "description": "Enable pagination controls footer. @default true"
+    },
+    "enablePagination": {
+      "name": "enablePagination",
+      "type": "boolean",
+      "optional": true,
+      "description": "Alias for pagination."
+    },
+    "pageSize": {
+      "name": "pageSize",
+      "type": "number",
+      "optional": true,
+      "description": "Number of rows displayed per page. @default 10"
+    },
+    "pageSizeOptions": {
+      "name": "pageSizeOptions",
+      "type": "number[]",
+      "optional": true,
+      "description": "Allowed page size options in the dropdown. @default [10, 25, 50, 100]"
+    },
+    "height": {
+      "name": "height",
+      "type": "number | string",
+      "optional": true,
+      "description": "Fixed container/body height with vertical scroll."
+    },
+    "bodyHeight": {
+      "name": "bodyHeight",
+      "type": "number | string",
+      "optional": true,
+      "description": "Explicit fixed height for the table body / scroll viewport."
+    },
+    "maxHeight": {
+      "name": "maxHeight",
+      "type": "number | string",
+      "optional": true,
+      "description": "Maximum container height with vertical scroll."
+    },
+    "minHeight": {
+      "name": "minHeight",
+      "type": "number | string",
+      "optional": true,
+      "description": "Minimum container height."
+    },
+    "onRowClick": {
+      "name": "onRowClick",
+      "type": "(row: T, index: number) => void",
+      "optional": true,
+      "description": "Row click callback."
+    },
+    "enableRowSelection": {
+      "name": "enableRowSelection",
+      "type": "boolean",
+      "optional": true,
+      "description": "Enable checkbox selection for rows. @default false"
+    },
+    "enableSelection": {
+      "name": "enableSelection",
+      "type": "boolean",
+      "optional": true,
+      "description": "Alias for enableRowSelection."
+    },
+    "selectedRowIds": {
+      "name": "selectedRowIds",
+      "type": "string[]",
+      "optional": true,
+      "description": "Controlled selected row IDs."
+    },
+    "onSelectionChange": {
+      "name": "onSelectionChange",
+      "type": "(selectedRows: T[], selectedIds: string[]) => void",
+      "optional": true,
+      "description": "Callback when selected row items and IDs change."
+    },
+    "onRowSelectionChange": {
+      "name": "onRowSelectionChange",
+      "type": "(selectedRows: T[], selectedIds?: string[]) => void",
+      "optional": true,
+      "description": "Alias callback for onSelectionChange."
+    },
+    "enableRowPinning": {
+      "name": "enableRowPinning",
+      "type": "boolean",
+      "optional": true,
+      "description": "Enable row pinning to the top of the table. @default true"
+    },
+    "optionsColumn": {
+      "name": "optionsColumn",
+      "type": "boolean",
+      "optional": true,
+      "description": "Show rightmost actions dropdown column. @default false"
+    },
+    "rowOptions": {
+      "name": "rowOptions",
+      "type": "(row: T) => RowOption<T>[]",
+      "optional": true,
+      "description": "Action items generator for each row."
+    },
+    "rowActions": {
+      "name": "rowActions",
+      "type": "(row: T) => RowOption<T>[]",
+      "optional": true,
+      "description": "Alias for rowOptions."
+    },
+    "columnOptions": {
+      "name": "columnOptions",
+      "type": "(columnId: string) => ColumnOption[]",
+      "optional": true,
+      "description": "Context actions for each column header."
+    },
+    "columnActions": {
+      "name": "columnActions",
+      "type": "(columnId: string) => ColumnOption[]",
+      "optional": true,
+      "description": "Alias for columnOptions."
+    },
+    "onPinRow": {
+      "name": "onPinRow",
+      "type": "(row: T, isPinned: boolean) => void",
+      "optional": true,
+      "description": "Callback fired when a row is pinned/unpinned."
+    },
+    "onDeleteRow": {
+      "name": "onDeleteRow",
+      "type": "(row: T) => void",
+      "optional": true,
+      "description": "Callback fired when a row delete action is triggered."
+    },
+    "onFreezeColumn": {
+      "name": "onFreezeColumn",
+      "type": "(columnId: string, freeze: boolean) => void",
+      "optional": true,
+      "description": "Callback fired when a column freeze state changes."
+    },
+    "getRowId": {
+      "name": "getRowId",
+      "type": "(row: T, index: number) => string",
+      "optional": true,
+      "description": "Unique ID extractor function for rows."
+    },
+    "loading": {
+      "name": "loading",
+      "type": "boolean",
+      "optional": true,
+      "description": "Loading state flag."
+    },
+    "emptyState": {
+      "name": "emptyState",
+      "type": "ReactNode",
+      "optional": true,
+      "description": "Custom empty state node."
+    },
+    "toolbarActions": {
+      "name": "toolbarActions",
+      "type": "ReactNode",
+      "optional": true,
+      "description": "Additional toolbar items on the right side."
+    },
+    "striped": {
+      "name": "striped",
+      "type": "boolean",
+      "optional": true,
+      "description": "Alternate row zebra striping. @default false"
+    },
+    "bordered": {
+      "name": "bordered",
+      "type": "boolean",
+      "optional": true,
+      "description": "Bordered table outline and cell borders. @default true"
+    },
+    "hoverable": {
+      "name": "hoverable",
+      "type": "boolean",
+      "optional": true,
+      "description": "Row hover highlight style. @default true"
+    },
+    "compact": {
+      "name": "compact",
+      "type": "boolean",
+      "optional": true,
+      "description": "Compact row density. @default false"
+    },
+    "showColumnVisibility": {
+      "name": "showColumnVisibility",
+      "type": "boolean",
+      "optional": true,
+      "description": "Show column visibility toggle button in toolbar. @default true"
+    },
+    "slots": {
+      "name": "slots",
+      "type": "SlotComponents<DataTableSlots>",
+      "optional": true,
+      "description": "Injected slot component overrides."
+    },
+    "slotProps": {
+      "name": "slotProps",
+      "type": "SlotPropsMap<DataTableSlots>",
+      "optional": true,
+      "description": "Props passed down into injected slot components."
+    }
+  },
+  "slots": {
+    "pageSizeSelect": {
+      "name": "pageSizeSelect",
+      "type": "React.ComponentType<SelectHTMLAttributes<HTMLSelectElement>>",
+      "optional": true,
+      "description": "Rows per page selector slot."
+    },
+    "row": {
+      "name": "row",
+      "type": "React.ComponentType<DataTableRowProps>",
+      "optional": true,
+      "description": "Row element slot.",
+      "resolvesTo": "DataTableRow"
+    },
+    "loader": {
+      "name": "loader",
+      "type": "React.ComponentType<DataTableLoaderProps>",
+      "optional": true,
+      "description": "Loading loader indicator slot.",
+      "resolvesTo": "DataTableLoader"
+    },
+    "emptyState": {
+      "name": "emptyState",
+      "type": "React.ComponentType<DataTableEmptyStateProps>",
+      "optional": true,
+      "description": "Empty state element slot.",
+      "resolvesTo": "DataTableEmptyState"
+    },
+    "rowActionTrigger": {
+      "name": "rowActionTrigger",
+      "type": "React.ComponentType<ButtonProps>",
+      "optional": true,
+      "description": "Action menu trigger button for rows.",
+      "resolvesTo": "Button"
+    },
+    "resizer": {
+      "name": "resizer",
+      "type": "React.ComponentType<HTMLAttributes<HTMLDivElement>>",
+      "optional": true,
+      "description": "Column resizer drag handle slot."
+    },
+    "columnActionTrigger": {
+      "name": "columnActionTrigger",
+      "type": "React.ComponentType<ButtonProps>",
+      "optional": true,
+      "description": "Column action menu trigger button.",
+      "resolvesTo": "Button"
+    },
+    "search": {
+      "name": "search",
+      "type": "React.ComponentType<DataTableSearchProps>",
+      "optional": true,
+      "description": "Search input field slot.",
+      "resolvesTo": "DataTableSearch"
+    },
+    "selectionBadge": {
+      "name": "selectionBadge",
+      "type": "React.ComponentType<DataTableSelectionBadgeProps>",
+      "optional": true,
+      "description": "Row selection counter badge slot.",
+      "resolvesTo": "DataTableSelectionBadge"
+    },
+    "columnVisibility": {
+      "name": "columnVisibility",
+      "type": "React.ComponentType<DataTableColumnVisibilityProps>",
+      "optional": true,
+      "description": "Column visibility popover menu slot.",
+      "resolvesTo": "DataTableColumnVisibility"
+    },
+    "toolbarActions": {
+      "name": "toolbarActions",
+      "type": "React.ComponentType<DataTableToolbarActionsProps>",
+      "optional": true,
+      "description": "Additional toolbar items slot on the right side.",
+      "resolvesTo": "DataTableToolbarActions"
+    },
+    "toolbar": {
+      "name": "toolbar",
+      "type": "React.ComponentType<DataTableToolbarProps>",
+      "optional": true,
+      "description": "Top action toolbar container slot.",
+      "resolvesTo": "DataTableToolbar"
+    },
+    "container": {
+      "name": "container",
+      "type": "React.ComponentType<DataTableContainerProps>",
+      "optional": true,
+      "description": "Scrollable table viewport container slot.",
+      "resolvesTo": "DataTableContainer"
+    },
+    "header": {
+      "name": "header",
+      "type": "React.ComponentType<DataTableHeaderProps>",
+      "optional": true,
+      "description": "Table header slot.",
+      "resolvesTo": "DataTableHeader"
+    },
+    "body": {
+      "name": "body",
+      "type": "React.ComponentType<DataTableBodyProps>",
+      "optional": true,
+      "description": "Table body slot.",
+      "resolvesTo": "DataTableBody"
+    },
+    "cell": {
+      "name": "cell",
+      "type": "React.ComponentType<DataTableCellProps>",
+      "optional": true,
+      "description": "Data cell slot.",
+      "resolvesTo": "DataTableCell"
+    },
+    "pagination": {
+      "name": "pagination",
+      "type": "React.ComponentType<DataTablePaginationProps>",
+      "optional": true,
+      "description": "Pagination controls container slot.",
+      "resolvesTo": "DataTablePagination"
+    }
+  },
+  "hook": {
+    "name": "useDataTable",
+    "state": [],
+    "actions": [],
+    "description": "Headless physics & state hook for DataTable"
+  },
+  "subComponents": [
+    "DataTableToolbar",
+    "DataTableSearch",
+    "DataTableSelectionBadge",
+    "DataTableColumnVisibility",
+    "DataTableToolbarActions",
+    "DataTableContainer",
+    "DataTableHeader",
+    "DataTableHeaderCell",
+    "DataTableBody",
+    "DataTableRow",
+    "DataTableCell",
+    "DataTableLoader",
+    "DataTableEmptyState",
+    "DataTablePagination"
+  ],
+  "attachments": {
+    "Toolbar": "DataTableToolbar",
+    "Search": "DataTableSearch",
+    "SelectionBadge": "DataTableSelectionBadge",
+    "SelectionBar": "DataTableSelectionBadge",
+    "ColumnVisibility": "DataTableColumnVisibility",
+    "ColumnManager": "DataTableColumnVisibility",
+    "ToolbarActions": "DataTableToolbarActions",
+    "ExportButton": "DataTableToolbarActions",
+    "Container": "DataTableContainer",
+    "Header": "DataTableHeader",
+    "Head": "DataTableHeaderCell",
+    "HeaderCell": "DataTableHeaderCell",
+    "Body": "DataTableBody",
+    "Row": "DataTableRow",
+    "Cell": "DataTableCell",
+    "Loader": "DataTableLoader",
+    "EmptyState": "DataTableEmptyState",
+    "Pagination": "DataTablePagination"
+  }
+}

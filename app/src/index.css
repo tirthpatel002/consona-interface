@@ -1,0 +1,10 @@
+@import "@consona/interface/styles.css";
+
+/* App-level enhancements */
+@layer base {
+  html, body {
+    background-color: var(--bg);
+    color: var(--fg);
+    overscroll-behavior-x: auto;
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-10-26T13:04:18.408Z",
+  "summary": {
+    "total": 0,
+    "errors": 0,
+    "warnings": 0,
+    "autoFixable": 0,
+    "semiAutoFixable": 0,
+    "manualFixable": 0,
+    "complianceScore": "0.0%",
+    "status": "PASSED"
+  },
+  "strategyTiers": {
+    "tier1_batchAutoFix": [],
+    "tier2_semiAutomated": [],
+    "tier3_manualArchitectural": []
+  },
+  "ruleGroups": {},
+  "modules": {},
+  "violations": []
+}
