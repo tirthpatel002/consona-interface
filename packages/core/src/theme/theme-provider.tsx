@@ -517,6 +517,26 @@ export function ThemeProvider({
       }
     })
 
+    // 5b. Derive border-subtle / border-strong when a palette only ships `--border`
+    // (keeps DND/card chrome from falling back to a near-black solid stroke).
+    const fgVar = root.style.getPropertyValue('--fg').trim() || 'currentColor'
+    if (!root.style.getPropertyValue('--border-subtle').trim()) {
+      root.style.setProperty(
+        '--border-subtle',
+        resolvedMode === 'dark'
+          ? `color-mix(in oklab, ${fgVar} 9%, transparent)`
+          : `color-mix(in oklab, ${fgVar} 8%, transparent)`,
+      )
+    }
+    if (!root.style.getPropertyValue('--border-strong').trim()) {
+      root.style.setProperty(
+        '--border-strong',
+        resolvedMode === 'dark'
+          ? `color-mix(in oklab, ${fgVar} 24%, transparent)`
+          : `color-mix(in oklab, ${fgVar} 18%, transparent)`,
+      )
+    }
+
     // 6. Geometric ramps & optical scaling calculations
     const radValue = (RADIUS_VALUES as any)[currentRadius] ?? currentRadius
     root.style.setProperty('--radius', String(radValue))

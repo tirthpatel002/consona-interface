@@ -115,7 +115,6 @@ export const sliderDoc: ComponentDocSpec = {
                   max={200}
                   step={5}
                   size="lg"
-                  dotCount={7}
                   colorStages={[
                     {
                       threshold: 0.45,
@@ -286,7 +285,6 @@ export const sliderDoc: ComponentDocSpec = {
                 min={0}
                 max={100}
                 step={1}
-                dotCount={5}
                 onChange={setVolume}
               />
             </div>

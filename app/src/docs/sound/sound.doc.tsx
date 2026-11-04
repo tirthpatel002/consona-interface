@@ -3,6 +3,7 @@ import {
   Badge,
   Button,
   ButtonGroup,
+  SOUND_REGISTRY,
   SoundTrigger,
   useContinuousSound,
   useCursorSound,
@@ -12,6 +13,8 @@ import {
   useScrollSound,
   useSound,
   useSoundFeedback,
+  type SoundEmphasis,
+  type SoundName,
 } from '@consona/interface'
 import type { ComponentDocSpec } from '../types'
 import {
@@ -57,8 +60,6 @@ import {
   MousePointer,
   RotateCw,
 } from 'lucide-react'
-import { SOUND_REGISTRY } from '../../../../src/modules/sound/engine/recipes'
-import type { SoundEmphasis, SoundName } from '../../../../src/modules/sound/engine/types'
 
 /* ==========================================================================
    Sound Metadata & Full Catalog (All 36 Cues: 9 Canonical + 19 Expressive FX + 8 Continuous Loops)

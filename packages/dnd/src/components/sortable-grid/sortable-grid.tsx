@@ -104,7 +104,7 @@ const SortableGridItemPrimitive = forwardRef<HTMLDivElement, SortableGridItemPro
       touchAction: 'none',
     }
 
-    const cellBaseClasses = `relative flex flex-col justify-center items-center p-space-md rounded-macro bg-bg-surface border border-border/80 shadow-xs hover:border-border-strong hover:shadow-subtle transition-[color,background-color,border-color,box-shadow] duration-300 ease-out select-none ${disabled ? 'cursor-default opacity-60' : 'cursor-grab active:cursor-grabbing'
+    const cellBaseClasses = `relative flex flex-col justify-center items-center p-space-md rounded-macro bg-bg-surface border border-border-subtle shadow-xs hover:border-border-strong hover:shadow-subtle transition-[color,background-color,border-color,box-shadow] duration-300 ease-out select-none ${disabled ? 'cursor-default opacity-60' : 'cursor-grab active:cursor-grabbing'
       }`
 
     if (typeof children === 'function') {

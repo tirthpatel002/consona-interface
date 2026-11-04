@@ -162,7 +162,7 @@ const DndBoardItemPrimitive = forwardRef<HTMLDivElement, DndBoardItemProps>(
     }
 
     const itemBaseClasses =
-      'relative flex flex-col gap-space-xs p-space-sm rounded-base bg-bg-surface border border-border/80 shadow-xs hover:border-border-strong hover:shadow-subtle transition-[color,background-color,border-color,box-shadow] duration-300 ease-out cursor-grab active:cursor-grabbing w-full min-w-0 box-border'
+      'relative flex flex-col gap-space-xs p-space-sm rounded-base bg-bg-surface border border-border-subtle shadow-xs hover:border-border-strong hover:shadow-subtle transition-[color,background-color,border-color,box-shadow] duration-300 ease-out cursor-grab active:cursor-grabbing w-full min-w-0 box-border'
 
     if (typeof children === 'function') {
       return (
@@ -672,8 +672,8 @@ const DndBoardColumnPrimitive = forwardRef<HTMLDivElement, DndBoardColumnProps>(
       'ring-2 ring-inset transition-[color,background-color,border-color,box-shadow] duration-300 ease-out'
 
     const columnBaseClasses = isCollapsed
-      ? `flex flex-col w-12 sm:w-14 min-w-12 max-w-14 min-h-96 max-h-120 p-2 rounded-macro border border-border bg-bg-surface/95 shadow-subtle ${columnMotion} shrink-0 select-none`
-      : `flex flex-col w-72 max-w-full min-h-96 max-h-120 p-space-sm rounded-macro border border-border bg-bg-surface/90 shadow-subtle ${columnMotion} shrink-0 select-none`
+      ? `flex flex-col w-12 sm:w-14 min-w-12 max-w-14 min-h-96 max-h-120 p-2 rounded-macro border border-border-subtle bg-bg-surface/95 shadow-subtle ${columnMotion} shrink-0 select-none`
+      : `flex flex-col w-72 max-w-full min-h-96 max-h-120 p-space-sm rounded-macro border border-border-subtle bg-bg-surface/90 shadow-subtle ${columnMotion} shrink-0 select-none`
 
     const renderColumnCardList = () => {
       if (children != null) {

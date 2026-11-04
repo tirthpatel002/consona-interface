@@ -74,13 +74,13 @@ export type SliderThumbShape = 'pill' | 'circle'
 export interface SliderThumbProps extends ComponentProps<typeof PrimitiveSliderThumb> {
   /** Custom CSS classes for the draggable slider thumb grip. */
   className?: string
-  /** Thumb geometry. Pill is a capsule; circle is a round knob. */
+  /** Thumb geometry. Pill is an elongated grip; circle is a square footprint. Both use optical `rounded-atom`. */
   thumb?: SliderThumbShape
 }
 
 const THUMB_SHAPE_CLASS: Record<SliderThumbShape, string> = {
-  circle: 'size-5 rounded-full',
-  pill: 'h-5 w-8 rounded-full group-orientation-vertical:h-8 group-orientation-vertical:w-5',
+  circle: 'size-5 rounded-atom',
+  pill: 'h-5 w-8 rounded-atom group-orientation-vertical:h-8 group-orientation-vertical:w-5',
 }
 
 export interface SliderSlots {
@@ -133,7 +133,7 @@ export const SliderThumb = createInterfaceComponent<SliderThumbProps>(
   {
     name: 'SliderThumb',
     category: 'form',
-    description: 'Interactive draggable thumb grip. Use thumb="pill" or thumb="circle".',
+    description: 'Interactive draggable thumb grip using optical rounded-atom. Use thumb="pill" or thumb="circle".',
     version: '1.0.0',
   },
   SliderThumbPrimitive
@@ -148,7 +148,7 @@ const SliderFillPrimitive = ({ className, ...props }: SliderFillProps) => {
   return (
     <PrimitiveSliderFill
       data-slot="slider-fill"
-      className={cn('pointer-events-none rounded-full bg-primary disabled:opacity-60', className)}
+      className={cn('pointer-events-none rounded-atom bg-primary disabled:opacity-60', className)}
       {...props}
     />
   )
@@ -206,7 +206,7 @@ const SliderTrackPrimitive = ({
     <PrimitiveSliderTrack
       data-slot="slider-track"
       className={cn(
-        'bg-secondary group/track relative cursor-pointer rounded-full',
+        'bg-secondary group/track relative cursor-pointer rounded-atom',
         'grow group-orientation-horizontal:h-1.5 group-orientation-horizontal:w-full group-orientation-vertical:w-1.5 group-orientation-vertical:flex-1',
         'disabled:cursor-not-allowed disabled:opacity-60',
         className
@@ -257,7 +257,7 @@ export interface SliderProps<T extends number | number[] = number>
   slots?: SlotComponents<SliderSlots>
   /** Property overrides passed down into injected slots. */
   slotProps?: SlotPropsMap<SliderSlots>
-  /** Thumb geometry. `pill` is a capsule; `circle` is a round knob. */
+  /** Thumb geometry. `pill` is elongated; `circle` is a square footprint. Both use optical `rounded-atom`. */
   thumb?: SliderThumbShape
   /** Shorthand alias for minValue. */
   min?: number
@@ -661,8 +661,6 @@ export interface AdaptiveSliderProps extends Omit<React.ComponentProps<'div'>, '
   maxValue?: number
   /** Step increment. Default: 25 */
   step?: number
-  /** Number of embedded track dot markers. Default: 6 (set to 0 to disable) */
-  dotCount?: number
   /** Whether the control is disabled. */
   isDisabled?: boolean
   /** Alias for isDisabled. */
@@ -714,8 +712,6 @@ interface AdaptiveSizeConfig {
   trackHeightPx: number
   thumbSizeClass: string
   innerDiscClass: string
-  dotSizeClass: string
-  dotPaddingClass: string
 }
 
 const ADAPTIVE_SIZE_CONFIGS: Record<AdaptiveSliderSize, AdaptiveSizeConfig> = {
@@ -724,32 +720,24 @@ const ADAPTIVE_SIZE_CONFIGS: Record<AdaptiveSliderSize, AdaptiveSizeConfig> = {
     trackHeightPx: 24,
     thumbSizeClass: 'size-6',
     innerDiscClass: 'size-[18px]',
-    dotSizeClass: 'size-1',
-    dotPaddingClass: 'px-2.5 sm:px-3',
   },
   md: {
     trackHeightClass: 'h-8',
     trackHeightPx: 32,
     thumbSizeClass: 'size-8',
     innerDiscClass: 'size-6',
-    dotSizeClass: 'size-1',
-    dotPaddingClass: 'px-3 sm:px-4',
   },
   lg: {
     trackHeightClass: 'h-10',
     trackHeightPx: 40,
     thumbSizeClass: 'size-10',
     innerDiscClass: 'size-[30px]',
-    dotSizeClass: 'size-1.5',
-    dotPaddingClass: 'px-3.5 sm:px-5',
   },
   xl: {
     trackHeightClass: 'h-13',
     trackHeightPx: 52,
     thumbSizeClass: 'size-13',
     innerDiscClass: 'size-10',
-    dotSizeClass: 'size-1.5',
-    dotPaddingClass: 'px-4 sm:px-8',
   },
 }
 
@@ -773,7 +761,6 @@ const AdaptiveSliderPrimitive = ({
   step = DEFAULT_ADAPTIVE_STEP,
   size = 'xl',
   width,
-  dotCount = 6,
   isDisabled = false,
   disabled = false,
   colorStages = DEFAULT_ADAPTIVE_COLOR_STAGES,
@@ -812,20 +799,6 @@ const AdaptiveSliderPrimitive = ({
     Math.max(0, effectiveMax > effectiveMin ? ((currentValue - effectiveMin) / (effectiveMax - effectiveMin)) * 100 : 0)
   )
 
-  const dots = useMemo(() => {
-    if (dotCount <= 0) return null
-    return Array.from({ length: dotCount }).map((_, i) => (
-      <div
-        key={i}
-        className={cn(
-          'z-30 rounded-full bg-[#C4B9FA] transition-colors dark:bg-neutral-600',
-          sizeConfig.dotSizeClass
-        )}
-        style={{ opacity: 0.8 }}
-      />
-    ))
-  }, [dotCount, sizeConfig.dotSizeClass])
-
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value)
     if (controlledValue === undefined) {
@@ -856,24 +829,13 @@ const AdaptiveSliderPrimitive = ({
     >
       <div
         className={cn(
-          'group relative flex w-full items-center overflow-hidden rounded-full bg-[#f1f3f5] transition-colors dark:bg-neutral-800',
+          'group relative flex w-full items-center overflow-hidden rounded-atom bg-[#f1f3f5] transition-colors dark:bg-neutral-800',
           sizeConfig.trackHeightClass,
           effectiveDisabled && 'opacity-60 cursor-not-allowed'
         )}
       >
-        {dots && (
-          <div
-            className={cn(
-              'pointer-events-none absolute inset-0 flex items-center justify-between transition-colors',
-              sizeConfig.dotPaddingClass
-            )}
-          >
-            {dots}
-          </div>
-        )}
-
         <motion.div
-          className="pointer-events-none absolute top-0 left-0 h-full rounded-full"
+          className="pointer-events-none absolute top-0 left-0 h-full rounded-atom"
           animate={{
             width: `calc((${percentage} / 100) * (100% - ${sizeConfig.trackHeightPx}px) + ${sizeConfig.trackHeightPx}px)`,
             background: colorSettings.gradient,
@@ -900,7 +862,7 @@ const AdaptiveSliderPrimitive = ({
 
         <motion.div
           className={cn(
-            'pointer-events-none absolute top-0 z-40 flex items-center justify-center rounded-full border-none',
+            'pointer-events-none absolute top-0 z-40 flex items-center justify-center rounded-atom border-none',
             sizeConfig.thumbSizeClass
           )}
           animate={{
@@ -910,7 +872,7 @@ const AdaptiveSliderPrimitive = ({
         >
           <div
             className={cn(
-              'rounded-full bg-white shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] shadow-md transition-transform group-hover:scale-105 dark:bg-neutral-100',
+              'rounded-atom bg-white shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] shadow-md transition-transform group-hover:scale-105 dark:bg-neutral-100',
               sizeConfig.innerDiscClass
             )}
           />

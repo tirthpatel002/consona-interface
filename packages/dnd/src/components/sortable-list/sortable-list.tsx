@@ -173,7 +173,7 @@ const SortableListItemPrimitive = forwardRef<HTMLDivElement, SortableListItemPro
       ? 'w-56 sm:w-64 max-w-xs shrink-0 min-w-0 box-border'
       : 'w-full min-w-0 box-border'
 
-    const itemBaseClasses = `relative flex items-center gap-space-sm p-space-sm rounded-base bg-bg-surface border border-border/80 shadow-xs hover:border-border-strong hover:shadow-subtle transition-[color,background-color,border-color,box-shadow] duration-300 ease-out select-none ${disabled ? 'cursor-default opacity-60' : 'cursor-grab active:cursor-grabbing'
+    const itemBaseClasses = `relative flex items-center gap-space-sm p-space-sm rounded-base bg-bg-surface border border-border-subtle shadow-xs hover:border-border-strong hover:shadow-subtle transition-[color,background-color,border-color,box-shadow] duration-300 ease-out select-none ${disabled ? 'cursor-default opacity-60' : 'cursor-grab active:cursor-grabbing'
       } ${orientationClasses}`
 
     if (typeof children === 'function') {
