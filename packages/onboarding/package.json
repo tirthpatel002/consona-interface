@@ -1,0 +1,73 @@
+{
+  "name": "@consona/interface-onboarding",
+  "version": "1.0.0",
+  "description": "Consona Interface onboarding module",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./onboarding-focus": {
+      "types": "./dist/components/onboarding-focus/index.d.ts",
+      "import": "./dist/components/onboarding-focus/index.js",
+      "default": "./dist/components/onboarding-focus/index.js"
+    },
+    "./tour": {
+      "types": "./dist/components/tour/index.d.ts",
+      "import": "./dist/components/tour/index.js",
+      "default": "./dist/components/tour/index.js"
+    },
+    "./tour-beacon": {
+      "types": "./dist/components/tour-beacon/index.d.ts",
+      "import": "./dist/components/tour-beacon/index.js",
+      "default": "./dist/components/tour-beacon/index.js"
+    },
+    "./tour-card": {
+      "types": "./dist/components/tour-card/index.d.ts",
+      "import": "./dist/components/tour-card/index.js",
+      "default": "./dist/components/tour-card/index.js"
+    },
+    "./tour-checklist": {
+      "types": "./dist/components/tour-checklist/index.d.ts",
+      "import": "./dist/components/tour-checklist/index.js",
+      "default": "./dist/components/tour-checklist/index.js"
+    },
+    "./tour-spotlight": {
+      "types": "./dist/components/tour-spotlight/index.d.ts",
+      "import": "./dist/components/tour-spotlight/index.js",
+      "default": "./dist/components/tour-spotlight/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package onboarding",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@consona/interface-core": "*",
+    "@consona/interface-overlay": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

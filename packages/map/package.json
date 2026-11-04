@@ -1,0 +1,118 @@
+{
+  "name": "@consona/interface-map",
+  "version": "1.0.0",
+  "description": "Consona Interface map module",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./globe-map": {
+      "types": "./dist/components/globe-map/index.d.ts",
+      "import": "./dist/components/globe-map/index.js",
+      "default": "./dist/components/globe-map/index.js"
+    },
+    "./map": {
+      "types": "./dist/components/map/index.d.ts",
+      "import": "./dist/components/map/index.js",
+      "default": "./dist/components/map/index.js"
+    },
+    "./map-arc": {
+      "types": "./dist/components/map-arc/index.d.ts",
+      "import": "./dist/components/map-arc/index.js",
+      "default": "./dist/components/map-arc/index.js"
+    },
+    "./map-cluster-layer": {
+      "types": "./dist/components/map-cluster-layer/index.d.ts",
+      "import": "./dist/components/map-cluster-layer/index.js",
+      "default": "./dist/components/map-cluster-layer/index.js"
+    },
+    "./map-controls": {
+      "types": "./dist/components/map-controls/index.d.ts",
+      "import": "./dist/components/map-controls/index.js",
+      "default": "./dist/components/map-controls/index.js"
+    },
+    "./map-geojson": {
+      "types": "./dist/components/map-geojson/index.d.ts",
+      "import": "./dist/components/map-geojson/index.js",
+      "default": "./dist/components/map-geojson/index.js"
+    },
+    "./map-hover": {
+      "types": "./dist/components/map-hover/index.d.ts",
+      "import": "./dist/components/map-hover/index.js",
+      "default": "./dist/components/map-hover/index.js"
+    },
+    "./map-legend": {
+      "types": "./dist/components/map-legend/index.d.ts",
+      "import": "./dist/components/map-legend/index.js",
+      "default": "./dist/components/map-legend/index.js"
+    },
+    "./map-marker": {
+      "types": "./dist/components/map-marker/index.d.ts",
+      "import": "./dist/components/map-marker/index.js",
+      "default": "./dist/components/map-marker/index.js"
+    },
+    "./map-path": {
+      "types": "./dist/components/map-path/index.d.ts",
+      "import": "./dist/components/map-path/index.js",
+      "default": "./dist/components/map-path/index.js"
+    },
+    "./map-popup": {
+      "types": "./dist/components/map-popup/index.d.ts",
+      "import": "./dist/components/map-popup/index.js",
+      "default": "./dist/components/map-popup/index.js"
+    },
+    "./map-route": {
+      "types": "./dist/components/map-route/index.d.ts",
+      "import": "./dist/components/map-route/index.js",
+      "default": "./dist/components/map-route/index.js"
+    },
+    "./map-search": {
+      "types": "./dist/components/map-search/index.d.ts",
+      "import": "./dist/components/map-search/index.js",
+      "default": "./dist/components/map-search/index.js"
+    },
+    "./map-shape": {
+      "types": "./dist/components/map-shape/index.d.ts",
+      "import": "./dist/components/map-shape/index.js",
+      "default": "./dist/components/map-shape/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package map",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "maplibre-gl": "^6.9.0"
+  },
+  "peerDependenciesMeta": {
+    "maplibre-gl": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@consona/interface-core": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -28,7 +28,15 @@ const args = process.argv.slice(2)
 const isDryRun = args.includes('--dry-run')
 const filterArg = args.find((a) => a.startsWith('--filter='))?.replace('--filter=', '')
 
-const SRC_DIR = path.resolve(process.cwd(), 'src')
+const PACKAGES_DIR = path.resolve(process.cwd(), 'packages')
+function getPackageSrcDirs(): string[] {
+  if (!fs.existsSync(PACKAGES_DIR)) return []
+  return fs
+    .readdirSync(PACKAGES_DIR)
+    .filter((name) => name !== 'interface' && fs.existsSync(path.join(PACKAGES_DIR, name, 'src')))
+    .map((name) => path.join(PACKAGES_DIR, name, 'src'))
+}
+const SRC_DIR = path.join(PACKAGES_DIR, 'core', 'src') // legacy single-root fallback
 
 interface TransformResult {
   filePath: string
@@ -149,7 +157,7 @@ function main() {
     console.log('🔍 [DRY RUN] No files will be written.\n')
   }
 
-  const allFiles = getAllFiles(SRC_DIR).filter((f) => {
+  const allFiles = getPackageSrcDirs().flatMap((d) => getAllFiles(d)).filter((f) => {
     if (filterArg) {
       return f.includes(filterArg)
     }

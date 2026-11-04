@@ -1,0 +1,69 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "./src",
+    "paths": {
+      "@consona/interface-core": [
+        "../core/src/index.ts"
+      ],
+      "@consona/interface-core/*": [
+        "../core/src/*"
+      ],
+      "@consona/interface-media": [
+        "../media/src/index.ts"
+      ],
+      "@consona/interface-media/*": [
+        "../media/src/*"
+      ],
+      "@consona/interface-orb": [
+        "../orb/src/index.ts"
+      ],
+      "@consona/interface-orb/*": [
+        "../orb/src/*"
+      ],
+      "@consona/interface-sound": [
+        "../sound/src/index.ts"
+      ],
+      "@consona/interface-sound/*": [
+        "../sound/src/*"
+      ],
+      "@consona/interface-overlay": [
+        "../overlay/src/index.ts"
+      ],
+      "@consona/interface-overlay/*": [
+        "../overlay/src/*"
+      ],
+      "@consona/interface-dnd": [
+        "../dnd/src/index.ts"
+      ],
+      "@consona/interface-onboarding": [
+        "../onboarding/src/index.ts"
+      ],
+      "@consona/interface-composites": [
+        "../composites/src/index.ts"
+      ],
+      "@consona/interface-charts": [
+        "../charts/src/index.ts"
+      ],
+      "@consona/interface-map": [
+        "../map/src/index.ts"
+      ],
+      "@consona/interface-gantt": [
+        "../gantt/src/index.ts"
+      ],
+      "@consona/interface-glass": [
+        "../glass/src/index.ts"
+      ],
+      "@consona/interface-interaction": [
+        "../interaction/src/index.ts"
+      ],
+      "@consona/interface-navigation": [
+        "../navigation/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

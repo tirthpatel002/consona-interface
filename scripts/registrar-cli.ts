@@ -4,7 +4,7 @@
  * Allows developers and AI subagents to query the registry directly via CLI in both JSON and Markdown formats.
  */
 
-import { registrar } from '../src/registry/registrar.ts'
+import { registrar } from '../tools/registry/registrar.ts'
 
 const args = process.argv.slice(2)
 

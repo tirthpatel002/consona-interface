@@ -1,0 +1,53 @@
+{
+  "name": "@consona/interface-orb",
+  "version": "1.0.0",
+  "description": "Consona Interface orb module",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./orb": {
+      "types": "./dist/components/orb/index.d.ts",
+      "import": "./dist/components/orb/index.js",
+      "default": "./dist/components/orb/index.js"
+    },
+    "./sensitive-orb": {
+      "types": "./dist/components/sensitive-orb/index.d.ts",
+      "import": "./dist/components/sensitive-orb/index.js",
+      "default": "./dist/components/sensitive-orb/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/copy-package-assets.mjs --package orb && tsc -p tsconfig.build.json",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@consona/interface-core": "*",
+    "@consona/interface-media": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

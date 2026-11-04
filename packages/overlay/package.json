@@ -1,0 +1,62 @@
+{
+  "name": "@consona/interface-overlay",
+  "version": "1.0.0",
+  "description": "Consona Interface overlay module",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./anchored-callout": {
+      "types": "./dist/components/anchored-callout/index.d.ts",
+      "import": "./dist/components/anchored-callout/index.js",
+      "default": "./dist/components/anchored-callout/index.js"
+    },
+    "./feature-beacon": {
+      "types": "./dist/components/feature-beacon/index.d.ts",
+      "import": "./dist/components/feature-beacon/index.js",
+      "default": "./dist/components/feature-beacon/index.js"
+    },
+    "./overlay-focus": {
+      "types": "./dist/components/overlay-focus/index.d.ts",
+      "import": "./dist/components/overlay-focus/index.js",
+      "default": "./dist/components/overlay-focus/index.js"
+    },
+    "./spotlight-overlay": {
+      "types": "./dist/components/spotlight-overlay/index.d.ts",
+      "import": "./dist/components/spotlight-overlay/index.js",
+      "default": "./dist/components/spotlight-overlay/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package overlay",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@consona/interface-core": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

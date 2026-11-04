@@ -16,8 +16,11 @@
     "resolveJsonModule": true,
     "types": ["node", "react", "react-dom"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@consona/interface-core": ["./packages/core/src/index.ts"],
+      "@consona/interface-core/*": ["./packages/core/src/*"],
+      "@consona/interface-*": ["./packages/*/src/index.ts"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["packages/*/src/**/*", "tools/**/*", "scripts/**/*"],
+  "exclude": ["packages/*/dist", "node_modules", "app"]
 }

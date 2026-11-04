@@ -7,7 +7,17 @@ import * as path from 'path'
 import * as ts from 'typescript'
 
 const ROOT_DIR = process.cwd()
-const SRC_DIR = path.resolve(ROOT_DIR, 'src/modules')
+const PACKAGES_DIR = path.resolve(ROOT_DIR, 'packages')
+
+function getPackageSrcDirs(): string[] {
+  if (!fs.existsSync(PACKAGES_DIR)) return []
+  return fs
+    .readdirSync(PACKAGES_DIR)
+    .filter((name) => name !== 'interface' && fs.existsSync(path.join(PACKAGES_DIR, name, 'src')))
+    .map((name) => path.join(PACKAGES_DIR, name, 'src'))
+}
+
+const SRC_DIR = path.join(PACKAGES_DIR, 'core', 'src', 'modules', 'core') // fallback single root
 
 function getAllFiles(dir: string, ext = ['.tsx']): string[] {
   let results: string[] = []
@@ -68,7 +78,7 @@ export interface ActionableIssue {
   recommendedFix: string
 }
 
-const files = getAllFiles(SRC_DIR)
+const files = getPackageSrcDirs().flatMap((d) => getAllFiles(d))
 const diagnostics: ComponentDiagnostic[] = []
 
 for (const file of files) {

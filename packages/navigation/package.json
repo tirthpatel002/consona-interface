@@ -1,0 +1,62 @@
+{
+  "name": "@consona/interface-navigation",
+  "version": "1.0.0",
+  "description": "Consona Interface navigation module",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./nav-breadcrumbs": {
+      "types": "./dist/components/nav-breadcrumbs/index.d.ts",
+      "import": "./dist/components/nav-breadcrumbs/index.js",
+      "default": "./dist/components/nav-breadcrumbs/index.js"
+    },
+    "./nav-level-menu": {
+      "types": "./dist/components/nav-level-menu/index.d.ts",
+      "import": "./dist/components/nav-level-menu/index.js",
+      "default": "./dist/components/nav-level-menu/index.js"
+    },
+    "./nav-link": {
+      "types": "./dist/components/nav-link/index.d.ts",
+      "import": "./dist/components/nav-link/index.js",
+      "default": "./dist/components/nav-link/index.js"
+    },
+    "./nav-outlet": {
+      "types": "./dist/components/nav-outlet/index.d.ts",
+      "import": "./dist/components/nav-outlet/index.js",
+      "default": "./dist/components/nav-outlet/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package navigation",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@consona/interface-core": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

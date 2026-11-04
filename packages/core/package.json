@@ -1,0 +1,517 @@
+{
+  "name": "@consona/interface-core",
+  "version": "1.0.0",
+  "description": "Consona Interface core — substrate, theme, provider, and foundation components",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "**/*.css",
+    "./dist/theme/styles.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./dist/theme/styles.css",
+    "./theme": {
+      "types": "./dist/theme/index.d.ts",
+      "import": "./dist/theme/index.js",
+      "default": "./dist/theme/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider/index.d.ts",
+      "import": "./dist/provider/index.js",
+      "default": "./dist/provider/index.js"
+    },
+    "./accordion": {
+      "types": "./dist/modules/core/components/accordion/index.d.ts",
+      "import": "./dist/modules/core/components/accordion/index.js",
+      "default": "./dist/modules/core/components/accordion/index.js"
+    },
+    "./aspect-ratio": {
+      "types": "./dist/modules/core/components/aspect-ratio/index.d.ts",
+      "import": "./dist/modules/core/components/aspect-ratio/index.js",
+      "default": "./dist/modules/core/components/aspect-ratio/index.js"
+    },
+    "./avatar": {
+      "types": "./dist/modules/core/components/avatar/index.d.ts",
+      "import": "./dist/modules/core/components/avatar/index.js",
+      "default": "./dist/modules/core/components/avatar/index.js"
+    },
+    "./badge": {
+      "types": "./dist/modules/core/components/badge/index.d.ts",
+      "import": "./dist/modules/core/components/badge/index.js",
+      "default": "./dist/modules/core/components/badge/index.js"
+    },
+    "./bento-grid": {
+      "types": "./dist/modules/core/components/bento-grid/index.d.ts",
+      "import": "./dist/modules/core/components/bento-grid/index.js",
+      "default": "./dist/modules/core/components/bento-grid/index.js"
+    },
+    "./breadcrumbs": {
+      "types": "./dist/modules/core/components/breadcrumbs/index.d.ts",
+      "import": "./dist/modules/core/components/breadcrumbs/index.js",
+      "default": "./dist/modules/core/components/breadcrumbs/index.js"
+    },
+    "./button": {
+      "types": "./dist/modules/core/components/button/index.d.ts",
+      "import": "./dist/modules/core/components/button/index.js",
+      "default": "./dist/modules/core/components/button/index.js"
+    },
+    "./calendar": {
+      "types": "./dist/modules/core/components/calendar/index.d.ts",
+      "import": "./dist/modules/core/components/calendar/index.js",
+      "default": "./dist/modules/core/components/calendar/index.js"
+    },
+    "./card": {
+      "types": "./dist/modules/core/components/card/index.d.ts",
+      "import": "./dist/modules/core/components/card/index.js",
+      "default": "./dist/modules/core/components/card/index.js"
+    },
+    "./carousel": {
+      "types": "./dist/modules/core/components/carousel/index.d.ts",
+      "import": "./dist/modules/core/components/carousel/index.js",
+      "default": "./dist/modules/core/components/carousel/index.js"
+    },
+    "./chapter-scrubber": {
+      "types": "./dist/modules/core/components/chapter-scrubber/index.d.ts",
+      "import": "./dist/modules/core/components/chapter-scrubber/index.js",
+      "default": "./dist/modules/core/components/chapter-scrubber/index.js"
+    },
+    "./checkbox": {
+      "types": "./dist/modules/core/components/checkbox/index.d.ts",
+      "import": "./dist/modules/core/components/checkbox/index.js",
+      "default": "./dist/modules/core/components/checkbox/index.js"
+    },
+    "./choice-box": {
+      "types": "./dist/modules/core/components/choice-box/index.d.ts",
+      "import": "./dist/modules/core/components/choice-box/index.js",
+      "default": "./dist/modules/core/components/choice-box/index.js"
+    },
+    "./clock": {
+      "types": "./dist/modules/core/components/clock/index.d.ts",
+      "import": "./dist/modules/core/components/clock/index.js",
+      "default": "./dist/modules/core/components/clock/index.js"
+    },
+    "./color": {
+      "types": "./dist/modules/core/components/color/index.d.ts",
+      "import": "./dist/modules/core/components/color/index.js",
+      "default": "./dist/modules/core/components/color/index.js"
+    },
+    "./combo-box": {
+      "types": "./dist/modules/core/components/combo-box/index.d.ts",
+      "import": "./dist/modules/core/components/combo-box/index.js",
+      "default": "./dist/modules/core/components/combo-box/index.js"
+    },
+    "./command-menu": {
+      "types": "./dist/modules/core/components/command-menu/index.d.ts",
+      "import": "./dist/modules/core/components/command-menu/index.js",
+      "default": "./dist/modules/core/components/command-menu/index.js"
+    },
+    "./compare-pane": {
+      "types": "./dist/modules/core/components/compare-pane/index.d.ts",
+      "import": "./dist/modules/core/components/compare-pane/index.js",
+      "default": "./dist/modules/core/components/compare-pane/index.js"
+    },
+    "./context-menu": {
+      "types": "./dist/modules/core/components/context-menu/index.d.ts",
+      "import": "./dist/modules/core/components/context-menu/index.js",
+      "default": "./dist/modules/core/components/context-menu/index.js"
+    },
+    "./counter": {
+      "types": "./dist/modules/core/components/counter/index.d.ts",
+      "import": "./dist/modules/core/components/counter/index.js",
+      "default": "./dist/modules/core/components/counter/index.js"
+    },
+    "./data-selection-bar": {
+      "types": "./dist/modules/core/components/data-selection-bar/index.d.ts",
+      "import": "./dist/modules/core/components/data-selection-bar/index.js",
+      "default": "./dist/modules/core/components/data-selection-bar/index.js"
+    },
+    "./data-table": {
+      "types": "./dist/modules/core/components/data-table/index.d.ts",
+      "import": "./dist/modules/core/components/data-table/index.js",
+      "default": "./dist/modules/core/components/data-table/index.js"
+    },
+    "./date-picker": {
+      "types": "./dist/modules/core/components/date-picker/index.d.ts",
+      "import": "./dist/modules/core/components/date-picker/index.js",
+      "default": "./dist/modules/core/components/date-picker/index.js"
+    },
+    "./date-time-picker": {
+      "types": "./dist/modules/core/components/date-time-picker/index.d.ts",
+      "import": "./dist/modules/core/components/date-time-picker/index.js",
+      "default": "./dist/modules/core/components/date-time-picker/index.js"
+    },
+    "./description-list": {
+      "types": "./dist/modules/core/components/description-list/index.d.ts",
+      "import": "./dist/modules/core/components/description-list/index.js",
+      "default": "./dist/modules/core/components/description-list/index.js"
+    },
+    "./diff-viewer": {
+      "types": "./dist/modules/core/components/diff-viewer/index.d.ts",
+      "import": "./dist/modules/core/components/diff-viewer/index.js",
+      "default": "./dist/modules/core/components/diff-viewer/index.js"
+    },
+    "./drawer": {
+      "types": "./dist/modules/core/components/drawer/index.d.ts",
+      "import": "./dist/modules/core/components/drawer/index.js",
+      "default": "./dist/modules/core/components/drawer/index.js"
+    },
+    "./drop-zone": {
+      "types": "./dist/modules/core/components/drop-zone/index.d.ts",
+      "import": "./dist/modules/core/components/drop-zone/index.js",
+      "default": "./dist/modules/core/components/drop-zone/index.js"
+    },
+    "./email-field": {
+      "types": "./dist/modules/core/components/email-field/index.d.ts",
+      "import": "./dist/modules/core/components/email-field/index.js",
+      "default": "./dist/modules/core/components/email-field/index.js"
+    },
+    "./email-input": {
+      "types": "./dist/modules/core/components/email-input/index.d.ts",
+      "import": "./dist/modules/core/components/email-input/index.js",
+      "default": "./dist/modules/core/components/email-input/index.js"
+    },
+    "./empty-state": {
+      "types": "./dist/modules/core/components/empty-state/index.d.ts",
+      "import": "./dist/modules/core/components/empty-state/index.js",
+      "default": "./dist/modules/core/components/empty-state/index.js"
+    },
+    "./field": {
+      "types": "./dist/modules/core/components/field/index.d.ts",
+      "import": "./dist/modules/core/components/field/index.js",
+      "default": "./dist/modules/core/components/field/index.js"
+    },
+    "./file-trigger": {
+      "types": "./dist/modules/core/components/file-trigger/index.d.ts",
+      "import": "./dist/modules/core/components/file-trigger/index.js",
+      "default": "./dist/modules/core/components/file-trigger/index.js"
+    },
+    "./gradient": {
+      "types": "./dist/modules/core/components/gradient/index.d.ts",
+      "import": "./dist/modules/core/components/gradient/index.js",
+      "default": "./dist/modules/core/components/gradient/index.js"
+    },
+    "./grid-list": {
+      "types": "./dist/modules/core/components/grid-list/index.d.ts",
+      "import": "./dist/modules/core/components/grid-list/index.js",
+      "default": "./dist/modules/core/components/grid-list/index.js"
+    },
+    "./infinite-scroll-section": {
+      "types": "./dist/modules/core/components/infinite-scroll-section/index.d.ts",
+      "import": "./dist/modules/core/components/infinite-scroll-section/index.js",
+      "default": "./dist/modules/core/components/infinite-scroll-section/index.js"
+    },
+    "./input": {
+      "types": "./dist/modules/core/components/input/index.d.ts",
+      "import": "./dist/modules/core/components/input/index.js",
+      "default": "./dist/modules/core/components/input/index.js"
+    },
+    "./input-otp": {
+      "types": "./dist/modules/core/components/input-otp/index.d.ts",
+      "import": "./dist/modules/core/components/input-otp/index.js",
+      "default": "./dist/modules/core/components/input-otp/index.js"
+    },
+    "./json-viewer": {
+      "types": "./dist/modules/core/components/json-viewer/index.d.ts",
+      "import": "./dist/modules/core/components/json-viewer/index.js",
+      "default": "./dist/modules/core/components/json-viewer/index.js"
+    },
+    "./kbd": {
+      "types": "./dist/modules/core/components/kbd/index.d.ts",
+      "import": "./dist/modules/core/components/kbd/index.js",
+      "default": "./dist/modules/core/components/kbd/index.js"
+    },
+    "./layout": {
+      "types": "./dist/modules/core/components/layout/index.d.ts",
+      "import": "./dist/modules/core/components/layout/index.js",
+      "default": "./dist/modules/core/components/layout/index.js"
+    },
+    "./link": {
+      "types": "./dist/modules/core/components/link/index.d.ts",
+      "import": "./dist/modules/core/components/link/index.js",
+      "default": "./dist/modules/core/components/link/index.js"
+    },
+    "./loader": {
+      "types": "./dist/modules/core/components/loader/index.d.ts",
+      "import": "./dist/modules/core/components/loader/index.js",
+      "default": "./dist/modules/core/components/loader/index.js"
+    },
+    "./menu": {
+      "types": "./dist/modules/core/components/menu/index.d.ts",
+      "import": "./dist/modules/core/components/menu/index.js",
+      "default": "./dist/modules/core/components/menu/index.js"
+    },
+    "./meter": {
+      "types": "./dist/modules/core/components/meter/index.d.ts",
+      "import": "./dist/modules/core/components/meter/index.js",
+      "default": "./dist/modules/core/components/meter/index.js"
+    },
+    "./modal": {
+      "types": "./dist/modules/core/components/modal/index.d.ts",
+      "import": "./dist/modules/core/components/modal/index.js",
+      "default": "./dist/modules/core/components/modal/index.js"
+    },
+    "./multiple-select": {
+      "types": "./dist/modules/core/components/multiple-select/index.d.ts",
+      "import": "./dist/modules/core/components/multiple-select/index.js",
+      "default": "./dist/modules/core/components/multiple-select/index.js"
+    },
+    "./native-select": {
+      "types": "./dist/modules/core/components/native-select/index.d.ts",
+      "import": "./dist/modules/core/components/native-select/index.js",
+      "default": "./dist/modules/core/components/native-select/index.js"
+    },
+    "./nav": {
+      "types": "./dist/modules/core/components/nav/index.d.ts",
+      "import": "./dist/modules/core/components/nav/index.js",
+      "default": "./dist/modules/core/components/nav/index.js"
+    },
+    "./note": {
+      "types": "./dist/modules/core/components/note/index.d.ts",
+      "import": "./dist/modules/core/components/note/index.js",
+      "default": "./dist/modules/core/components/note/index.js"
+    },
+    "./number-field": {
+      "types": "./dist/modules/core/components/number-field/index.d.ts",
+      "import": "./dist/modules/core/components/number-field/index.js",
+      "default": "./dist/modules/core/components/number-field/index.js"
+    },
+    "./otp-field": {
+      "types": "./dist/modules/core/components/otp-field/index.d.ts",
+      "import": "./dist/modules/core/components/otp-field/index.js",
+      "default": "./dist/modules/core/components/otp-field/index.js"
+    },
+    "./paginated-section": {
+      "types": "./dist/modules/core/components/paginated-section/index.d.ts",
+      "import": "./dist/modules/core/components/paginated-section/index.js",
+      "default": "./dist/modules/core/components/paginated-section/index.js"
+    },
+    "./pagination": {
+      "types": "./dist/modules/core/components/pagination/index.d.ts",
+      "import": "./dist/modules/core/components/pagination/index.js",
+      "default": "./dist/modules/core/components/pagination/index.js"
+    },
+    "./pagination-sections": {
+      "types": "./dist/modules/core/components/pagination-sections/index.d.ts",
+      "import": "./dist/modules/core/components/pagination-sections/index.js",
+      "default": "./dist/modules/core/components/pagination-sections/index.js"
+    },
+    "./password-field": {
+      "types": "./dist/modules/core/components/password-field/index.d.ts",
+      "import": "./dist/modules/core/components/password-field/index.js",
+      "default": "./dist/modules/core/components/password-field/index.js"
+    },
+    "./password-input": {
+      "types": "./dist/modules/core/components/password-input/index.d.ts",
+      "import": "./dist/modules/core/components/password-input/index.js",
+      "default": "./dist/modules/core/components/password-input/index.js"
+    },
+    "./phone-field": {
+      "types": "./dist/modules/core/components/phone-field/index.d.ts",
+      "import": "./dist/modules/core/components/phone-field/index.js",
+      "default": "./dist/modules/core/components/phone-field/index.js"
+    },
+    "./phone-input": {
+      "types": "./dist/modules/core/components/phone-input/index.d.ts",
+      "import": "./dist/modules/core/components/phone-input/index.js",
+      "default": "./dist/modules/core/components/phone-input/index.js"
+    },
+    "./popover": {
+      "types": "./dist/modules/core/components/popover/index.d.ts",
+      "import": "./dist/modules/core/components/popover/index.js",
+      "default": "./dist/modules/core/components/popover/index.js"
+    },
+    "./progress": {
+      "types": "./dist/modules/core/components/progress/index.d.ts",
+      "import": "./dist/modules/core/components/progress/index.js",
+      "default": "./dist/modules/core/components/progress/index.js"
+    },
+    "./radio": {
+      "types": "./dist/modules/core/components/radio/index.d.ts",
+      "import": "./dist/modules/core/components/radio/index.js",
+      "default": "./dist/modules/core/components/radio/index.js"
+    },
+    "./rating": {
+      "types": "./dist/modules/core/components/rating/index.d.ts",
+      "import": "./dist/modules/core/components/rating/index.js",
+      "default": "./dist/modules/core/components/rating/index.js"
+    },
+    "./scroll-area": {
+      "types": "./dist/modules/core/components/scroll-area/index.d.ts",
+      "import": "./dist/modules/core/components/scroll-area/index.js",
+      "default": "./dist/modules/core/components/scroll-area/index.js"
+    },
+    "./search-field": {
+      "types": "./dist/modules/core/components/search-field/index.d.ts",
+      "import": "./dist/modules/core/components/search-field/index.js",
+      "default": "./dist/modules/core/components/search-field/index.js"
+    },
+    "./select": {
+      "types": "./dist/modules/core/components/select/index.d.ts",
+      "import": "./dist/modules/core/components/select/index.js",
+      "default": "./dist/modules/core/components/select/index.js"
+    },
+    "./separator": {
+      "types": "./dist/modules/core/components/separator/index.d.ts",
+      "import": "./dist/modules/core/components/separator/index.js",
+      "default": "./dist/modules/core/components/separator/index.js"
+    },
+    "./show-more": {
+      "types": "./dist/modules/core/components/show-more/index.d.ts",
+      "import": "./dist/modules/core/components/show-more/index.js",
+      "default": "./dist/modules/core/components/show-more/index.js"
+    },
+    "./sidebar": {
+      "types": "./dist/modules/core/components/sidebar/index.d.ts",
+      "import": "./dist/modules/core/components/sidebar/index.js",
+      "default": "./dist/modules/core/components/sidebar/index.js"
+    },
+    "./skeleton": {
+      "types": "./dist/modules/core/components/skeleton/index.d.ts",
+      "import": "./dist/modules/core/components/skeleton/index.js",
+      "default": "./dist/modules/core/components/skeleton/index.js"
+    },
+    "./slider": {
+      "types": "./dist/modules/core/components/slider/index.d.ts",
+      "import": "./dist/modules/core/components/slider/index.js",
+      "default": "./dist/modules/core/components/slider/index.js"
+    },
+    "./snippet": {
+      "types": "./dist/modules/core/components/snippet/index.d.ts",
+      "import": "./dist/modules/core/components/snippet/index.js",
+      "default": "./dist/modules/core/components/snippet/index.js"
+    },
+    "./split-pane": {
+      "types": "./dist/modules/core/components/split-pane/index.d.ts",
+      "import": "./dist/modules/core/components/split-pane/index.js",
+      "default": "./dist/modules/core/components/split-pane/index.js"
+    },
+    "./stepper": {
+      "types": "./dist/modules/core/components/stepper/index.d.ts",
+      "import": "./dist/modules/core/components/stepper/index.js",
+      "default": "./dist/modules/core/components/stepper/index.js"
+    },
+    "./steps": {
+      "types": "./dist/modules/core/components/steps/index.d.ts",
+      "import": "./dist/modules/core/components/steps/index.js",
+      "default": "./dist/modules/core/components/steps/index.js"
+    },
+    "./switch": {
+      "types": "./dist/modules/core/components/switch/index.d.ts",
+      "import": "./dist/modules/core/components/switch/index.js",
+      "default": "./dist/modules/core/components/switch/index.js"
+    },
+    "./table": {
+      "types": "./dist/modules/core/components/table/index.d.ts",
+      "import": "./dist/modules/core/components/table/index.js",
+      "default": "./dist/modules/core/components/table/index.js"
+    },
+    "./tabs": {
+      "types": "./dist/modules/core/components/tabs/index.d.ts",
+      "import": "./dist/modules/core/components/tabs/index.js",
+      "default": "./dist/modules/core/components/tabs/index.js"
+    },
+    "./text": {
+      "types": "./dist/modules/core/components/text/index.d.ts",
+      "import": "./dist/modules/core/components/text/index.js",
+      "default": "./dist/modules/core/components/text/index.js"
+    },
+    "./textarea": {
+      "types": "./dist/modules/core/components/textarea/index.d.ts",
+      "import": "./dist/modules/core/components/textarea/index.js",
+      "default": "./dist/modules/core/components/textarea/index.js"
+    },
+    "./theme-editor": {
+      "types": "./dist/modules/core/components/theme-editor/index.d.ts",
+      "import": "./dist/modules/core/components/theme-editor/index.js",
+      "default": "./dist/modules/core/components/theme-editor/index.js"
+    },
+    "./time-field": {
+      "types": "./dist/modules/core/components/time-field/index.d.ts",
+      "import": "./dist/modules/core/components/time-field/index.js",
+      "default": "./dist/modules/core/components/time-field/index.js"
+    },
+    "./time-wheel": {
+      "types": "./dist/modules/core/components/time-wheel/index.d.ts",
+      "import": "./dist/modules/core/components/time-wheel/index.js",
+      "default": "./dist/modules/core/components/time-wheel/index.js"
+    },
+    "./timer": {
+      "types": "./dist/modules/core/components/timer/index.d.ts",
+      "import": "./dist/modules/core/components/timer/index.js",
+      "default": "./dist/modules/core/components/timer/index.js"
+    },
+    "./toast": {
+      "types": "./dist/modules/core/components/toast/index.d.ts",
+      "import": "./dist/modules/core/components/toast/index.js",
+      "default": "./dist/modules/core/components/toast/index.js"
+    },
+    "./toolbar": {
+      "types": "./dist/modules/core/components/toolbar/index.d.ts",
+      "import": "./dist/modules/core/components/toolbar/index.js",
+      "default": "./dist/modules/core/components/toolbar/index.js"
+    },
+    "./tooltip": {
+      "types": "./dist/modules/core/components/tooltip/index.d.ts",
+      "import": "./dist/modules/core/components/tooltip/index.js",
+      "default": "./dist/modules/core/components/tooltip/index.js"
+    },
+    "./tree": {
+      "types": "./dist/modules/core/components/tree/index.d.ts",
+      "import": "./dist/modules/core/components/tree/index.js",
+      "default": "./dist/modules/core/components/tree/index.js"
+    },
+    "./username-field": {
+      "types": "./dist/modules/core/components/username-field/index.d.ts",
+      "import": "./dist/modules/core/components/username-field/index.js",
+      "default": "./dist/modules/core/components/username-field/index.js"
+    },
+    "./username-input": {
+      "types": "./dist/modules/core/components/username-input/index.d.ts",
+      "import": "./dist/modules/core/components/username-input/index.js",
+      "default": "./dist/modules/core/components/username-input/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package core",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@internationalized/date": "^3.12.4",
+    "@react-stately/color": "^3.10.1",
+    "cn": "^0.3.0",
+    "embla-carousel-react": "^8.6.0",
+    "input-otp": "^1.5.0",
+    "motion": "^13.2.0",
+    "react-aria-components": "^1.21.1",
+    "sonner": "^2.0.8",
+    "tailwind-variants": "^3.3.1",
+    "tailwindcss-react-aria-components": "^2.2.0",
+    "tw-animate-css": "^1.4.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

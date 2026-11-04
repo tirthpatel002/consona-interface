@@ -1,0 +1,97 @@
+{
+  "name": "@consona/interface-gantt",
+  "version": "1.0.0",
+  "description": "Consona Interface gantt module",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./gantt": {
+      "types": "./dist/components/gantt/index.d.ts",
+      "import": "./dist/components/gantt/index.js",
+      "default": "./dist/components/gantt/index.js"
+    },
+    "./gantt-bar": {
+      "types": "./dist/components/gantt-bar/index.d.ts",
+      "import": "./dist/components/gantt-bar/index.js",
+      "default": "./dist/components/gantt-bar/index.js"
+    },
+    "./gantt-create-strip": {
+      "types": "./dist/components/gantt-create-strip/index.d.ts",
+      "import": "./dist/components/gantt-create-strip/index.js",
+      "default": "./dist/components/gantt-create-strip/index.js"
+    },
+    "./gantt-dependencies": {
+      "types": "./dist/components/gantt-dependencies/index.d.ts",
+      "import": "./dist/components/gantt-dependencies/index.js",
+      "default": "./dist/components/gantt-dependencies/index.js"
+    },
+    "./gantt-edge-chip": {
+      "types": "./dist/components/gantt-edge-chip/index.d.ts",
+      "import": "./dist/components/gantt-edge-chip/index.js",
+      "default": "./dist/components/gantt-edge-chip/index.js"
+    },
+    "./gantt-grid": {
+      "types": "./dist/components/gantt-grid/index.d.ts",
+      "import": "./dist/components/gantt-grid/index.js",
+      "default": "./dist/components/gantt-grid/index.js"
+    },
+    "./gantt-header": {
+      "types": "./dist/components/gantt-header/index.d.ts",
+      "import": "./dist/components/gantt-header/index.js",
+      "default": "./dist/components/gantt-header/index.js"
+    },
+    "./gantt-now-line": {
+      "types": "./dist/components/gantt-now-line/index.d.ts",
+      "import": "./dist/components/gantt-now-line/index.js",
+      "default": "./dist/components/gantt-now-line/index.js"
+    },
+    "./gantt-rail": {
+      "types": "./dist/components/gantt-rail/index.d.ts",
+      "import": "./dist/components/gantt-rail/index.js",
+      "default": "./dist/components/gantt-rail/index.js"
+    },
+    "./gantt-row": {
+      "types": "./dist/components/gantt-row/index.d.ts",
+      "import": "./dist/components/gantt-row/index.js",
+      "default": "./dist/components/gantt-row/index.js"
+    },
+    "./gantt-toolbar": {
+      "types": "./dist/components/gantt-toolbar/index.d.ts",
+      "import": "./dist/components/gantt-toolbar/index.js",
+      "default": "./dist/components/gantt-toolbar/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package gantt",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@consona/interface-core": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "name": "@consona/interface",
+  "version": "1.0.0",
+  "description": "Consona Interface Enhanced — Micro-Kernel UI System on React Aria Components",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "**/*.css",
+    "./dist/styles.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "default": "./dist/core.js"
+    },
+    "./charts": {
+      "types": "./dist/charts.d.ts",
+      "import": "./dist/charts.js",
+      "default": "./dist/charts.js"
+    },
+    "./composites": {
+      "types": "./dist/composites.d.ts",
+      "import": "./dist/composites.js",
+      "default": "./dist/composites.js"
+    },
+    "./dnd": {
+      "types": "./dist/dnd.d.ts",
+      "import": "./dist/dnd.js",
+      "default": "./dist/dnd.js"
+    },
+    "./gantt": {
+      "types": "./dist/gantt.d.ts",
+      "import": "./dist/gantt.js",
+      "default": "./dist/gantt.js"
+    },
+    "./glass": {
+      "types": "./dist/glass.d.ts",
+      "import": "./dist/glass.js",
+      "default": "./dist/glass.js"
+    },
+    "./interaction": {
+      "types": "./dist/interaction.d.ts",
+      "import": "./dist/interaction.js",
+      "default": "./dist/interaction.js"
+    },
+    "./map": {
+      "types": "./dist/map.d.ts",
+      "import": "./dist/map.js",
+      "default": "./dist/map.js"
+    },
+    "./media": {
+      "types": "./dist/media.d.ts",
+      "import": "./dist/media.js",
+      "default": "./dist/media.js"
+    },
+    "./navigation": {
+      "types": "./dist/navigation.d.ts",
+      "import": "./dist/navigation.js",
+      "default": "./dist/navigation.js"
+    },
+    "./onboarding": {
+      "types": "./dist/onboarding.d.ts",
+      "import": "./dist/onboarding.js",
+      "default": "./dist/onboarding.js"
+    },
+    "./orb": {
+      "types": "./dist/orb.d.ts",
+      "import": "./dist/orb.js",
+      "default": "./dist/orb.js"
+    },
+    "./overlay": {
+      "types": "./dist/overlay.d.ts",
+      "import": "./dist/overlay.js",
+      "default": "./dist/overlay.js"
+    },
+    "./sound": {
+      "types": "./dist/sound.d.ts",
+      "import": "./dist/sound.js",
+      "default": "./dist/sound.js"
+    },
+    "./audio": {
+      "types": "./dist/media.d.ts",
+      "import": "./dist/media.js",
+      "default": "./dist/media.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-umbrella-assets.mjs",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@consona/interface-core": "*",
+    "@consona/interface-charts": "*",
+    "@consona/interface-composites": "*",
+    "@consona/interface-dnd": "*",
+    "@consona/interface-gantt": "*",
+    "@consona/interface-glass": "*",
+    "@consona/interface-interaction": "*",
+    "@consona/interface-map": "*",
+    "@consona/interface-media": "*",
+    "@consona/interface-navigation": "*",
+    "@consona/interface-onboarding": "*",
+    "@consona/interface-orb": "*",
+    "@consona/interface-overlay": "*",
+    "@consona/interface-sound": "*"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

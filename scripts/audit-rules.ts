@@ -17,8 +17,20 @@ export interface Violation {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const ROOT_DIR = path.resolve(__dirname, '..')
-const SRC_DIR = path.join(ROOT_DIR, 'src')
+const PACKAGES_DIR = path.join(ROOT_DIR, 'packages')
 const DOCS_DIR = path.join(ROOT_DIR, 'app', 'src', 'docs')
+
+/** All feature package source roots (excludes umbrella). */
+function getPackageSrcDirs(): string[] {
+  if (!fs.existsSync(PACKAGES_DIR)) return []
+  return fs
+    .readdirSync(PACKAGES_DIR)
+    .filter((name) => name !== 'interface' && fs.existsSync(path.join(PACKAGES_DIR, name, 'src')))
+    .map((name) => path.join(PACKAGES_DIR, name, 'src'))
+}
+
+const CORE_SRC = path.join(PACKAGES_DIR, 'core', 'src')
+const SRC_DIR = CORE_SRC // legacy alias: substrate + modules/core live under packages/core/src
 
 const violations: Violation[] = []
 
@@ -161,7 +173,7 @@ function parseTsFile(filePath: string): ParsedFile {
 // 1. Audit Pure Engine Files (Rule ENG1, ENG2)
 // =============================================================================
 function auditEngineFiles() {
-  const engineFiles = getAllFiles(path.join(SRC_DIR, 'modules')).filter((f) =>
+  const engineFiles = getPackageSrcDirs().flatMap((d) => getAllFiles(d)).filter((f) =>
     f.includes('/engine/') && (f.endsWith('.ts') || f.endsWith('.tsx'))
   )
 
@@ -229,7 +241,7 @@ function auditEngineFiles() {
 // =============================================================================
 function auditHooks() {
   // Type A: Universal hooks in src/hooks/
-  const universalHooks = getAllFiles(path.join(SRC_DIR, 'hooks'))
+  const universalHooks = getAllFiles(path.join(CORE_SRC, 'hooks'))
   for (const file of universalHooks) {
     if (file.endsWith('index.ts')) continue
     const parsed = parseTsFile(file)
@@ -261,7 +273,7 @@ function auditHooks() {
   }
 
   // Type B & C: Domain hooks in src/modules/*/hooks/
-  const domainHooks = getAllFiles(path.join(SRC_DIR, 'modules')).filter((f) =>
+  const domainHooks = getPackageSrcDirs().flatMap((d) => getAllFiles(d)).filter((f) =>
     f.includes('/hooks/') && !f.endsWith('index.ts')
   )
 
@@ -288,9 +300,13 @@ function auditHooks() {
 // 3. Deep Component, Slot, Composite & Attachment Audit (Rule C0 - C8)
 // =============================================================================
 function auditComponents() {
-  const componentDirs = fs.readdirSync(path.join(SRC_DIR, 'modules'), { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => path.join(SRC_DIR, 'modules', d.name, 'components'))
+  const componentDirs = getPackageSrcDirs()
+    .map((d) => {
+      // core keeps components under modules/core/components
+      const coreComponents = path.join(d, 'modules', 'core', 'components')
+      if (fs.existsSync(coreComponents)) return coreComponents
+      return path.join(d, 'components')
+    })
     .filter((d) => fs.existsSync(d))
 
   const allComponentFiles: string[] = []
@@ -938,7 +954,7 @@ function auditDocs() {
       const idMatch = content.match(/id\s*:\s*['"]([^'"]+)['"]/)
       if (idMatch) {
         const docId = idMatch[1]
-        const compFiles = getAllFiles(path.join(SRC_DIR, 'modules'), ['.tsx']).filter(
+        const compFiles = getPackageSrcDirs().flatMap((d) => getAllFiles(d, ['.tsx'])).filter(
           (f) => path.basename(f, '.tsx') === docId && f.includes('/components/')
         )
 
@@ -976,7 +992,7 @@ function auditDocs() {
 // 4. Audit Defensive Engineering, Null Guards & Logic Principles (Rule DEV)
 // =============================================================================
 function auditDefensiveLogicAndEngineeringPatterns() {
-  const allSourceFiles = getAllFiles(SRC_DIR)
+  const allSourceFiles = getPackageSrcDirs().flatMap((d) => getAllFiles(d))
 
   for (const file of allSourceFiles) {
     if (file.endsWith('.d.ts') || file.endsWith('.json')) continue

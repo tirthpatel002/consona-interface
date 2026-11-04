@@ -1,0 +1,107 @@
+{
+  "name": "@consona/interface-media",
+  "version": "1.0.0",
+  "description": "Consona Interface media module",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./audio-player": {
+      "types": "./dist/components/audio-player/index.d.ts",
+      "import": "./dist/components/audio-player/index.js",
+      "default": "./dist/components/audio-player/index.js"
+    },
+    "./audio-player-button": {
+      "types": "./dist/components/audio-player-button/index.d.ts",
+      "import": "./dist/components/audio-player-button/index.js",
+      "default": "./dist/components/audio-player-button/index.js"
+    },
+    "./audio-recorder": {
+      "types": "./dist/components/audio-recorder/index.d.ts",
+      "import": "./dist/components/audio-recorder/index.js",
+      "default": "./dist/components/audio-recorder/index.js"
+    },
+    "./audio-recorder-button": {
+      "types": "./dist/components/audio-recorder-button/index.d.ts",
+      "import": "./dist/components/audio-recorder-button/index.js",
+      "default": "./dist/components/audio-recorder-button/index.js"
+    },
+    "./audio-source-picker": {
+      "types": "./dist/components/audio-source-picker/index.d.ts",
+      "import": "./dist/components/audio-source-picker/index.js",
+      "default": "./dist/components/audio-source-picker/index.js"
+    },
+    "./audio-timeline": {
+      "types": "./dist/components/audio-timeline/index.d.ts",
+      "import": "./dist/components/audio-timeline/index.js",
+      "default": "./dist/components/audio-timeline/index.js"
+    },
+    "./bar-visualizer": {
+      "types": "./dist/components/bar-visualizer/index.d.ts",
+      "import": "./dist/components/bar-visualizer/index.js",
+      "default": "./dist/components/bar-visualizer/index.js"
+    },
+    "./live-waveform": {
+      "types": "./dist/components/live-waveform/index.d.ts",
+      "import": "./dist/components/live-waveform/index.js",
+      "default": "./dist/components/live-waveform/index.js"
+    },
+    "./media-image": {
+      "types": "./dist/components/media-image/index.d.ts",
+      "import": "./dist/components/media-image/index.js",
+      "default": "./dist/components/media-image/index.js"
+    },
+    "./mic-selector": {
+      "types": "./dist/components/mic-selector/index.d.ts",
+      "import": "./dist/components/mic-selector/index.js",
+      "default": "./dist/components/mic-selector/index.js"
+    },
+    "./transcript-viewer": {
+      "types": "./dist/components/transcript-viewer/index.d.ts",
+      "import": "./dist/components/transcript-viewer/index.js",
+      "default": "./dist/components/transcript-viewer/index.js"
+    },
+    "./video-player": {
+      "types": "./dist/components/video-player/index.d.ts",
+      "import": "./dist/components/video-player/index.js",
+      "default": "./dist/components/video-player/index.js"
+    },
+    "./voice-button": {
+      "types": "./dist/components/voice-button/index.d.ts",
+      "import": "./dist/components/voice-button/index.js",
+      "default": "./dist/components/voice-button/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package media",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@consona/interface-core": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "name": "@consona/interface-charts",
+  "version": "1.0.0",
+  "description": "Consona Interface charts module",
+  "license": "MIT",
+  "author": "Consona",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./area-chart": {
+      "types": "./dist/components/area-chart/index.d.ts",
+      "import": "./dist/components/area-chart/index.js",
+      "default": "./dist/components/area-chart/index.js"
+    },
+    "./bar-chart": {
+      "types": "./dist/components/bar-chart/index.d.ts",
+      "import": "./dist/components/bar-chart/index.js",
+      "default": "./dist/components/bar-chart/index.js"
+    },
+    "./bump-chart": {
+      "types": "./dist/components/bump-chart/index.d.ts",
+      "import": "./dist/components/bump-chart/index.js",
+      "default": "./dist/components/bump-chart/index.js"
+    },
+    "./candlestick-chart": {
+      "types": "./dist/components/candlestick-chart/index.d.ts",
+      "import": "./dist/components/candlestick-chart/index.js",
+      "default": "./dist/components/candlestick-chart/index.js"
+    },
+    "./chart-container": {
+      "types": "./dist/components/chart-container/index.d.ts",
+      "import": "./dist/components/chart-container/index.js",
+      "default": "./dist/components/chart-container/index.js"
+    },
+    "./chord-chart": {
+      "types": "./dist/components/chord-chart/index.d.ts",
+      "import": "./dist/components/chord-chart/index.js",
+      "default": "./dist/components/chord-chart/index.js"
+    },
+    "./funnel-chart": {
+      "types": "./dist/components/funnel-chart/index.d.ts",
+      "import": "./dist/components/funnel-chart/index.js",
+      "default": "./dist/components/funnel-chart/index.js"
+    },
+    "./heatmap-chart": {
+      "types": "./dist/components/heatmap-chart/index.d.ts",
+      "import": "./dist/components/heatmap-chart/index.js",
+      "default": "./dist/components/heatmap-chart/index.js"
+    },
+    "./line-chart": {
+      "types": "./dist/components/line-chart/index.d.ts",
+      "import": "./dist/components/line-chart/index.js",
+      "default": "./dist/components/line-chart/index.js"
+    },
+    "./pie-chart": {
+      "types": "./dist/components/pie-chart/index.d.ts",
+      "import": "./dist/components/pie-chart/index.js",
+      "default": "./dist/components/pie-chart/index.js"
+    },
+    "./radar-chart": {
+      "types": "./dist/components/radar-chart/index.d.ts",
+      "import": "./dist/components/radar-chart/index.js",
+      "default": "./dist/components/radar-chart/index.js"
+    },
+    "./radial-bar-chart": {
+      "types": "./dist/components/radial-bar-chart/index.d.ts",
+      "import": "./dist/components/radial-bar-chart/index.js",
+      "default": "./dist/components/radial-bar-chart/index.js"
+    },
+    "./sankey-chart": {
+      "types": "./dist/components/sankey-chart/index.d.ts",
+      "import": "./dist/components/sankey-chart/index.js",
+      "default": "./dist/components/sankey-chart/index.js"
+    },
+    "./scatter-chart": {
+      "types": "./dist/components/scatter-chart/index.d.ts",
+      "import": "./dist/components/scatter-chart/index.js",
+      "default": "./dist/components/scatter-chart/index.js"
+    },
+    "./stream-chart": {
+      "types": "./dist/components/stream-chart/index.d.ts",
+      "import": "./dist/components/stream-chart/index.js",
+      "default": "./dist/components/stream-chart/index.js"
+    },
+    "./sunburst-chart": {
+      "types": "./dist/components/sunburst-chart/index.d.ts",
+      "import": "./dist/components/sunburst-chart/index.js",
+      "default": "./dist/components/sunburst-chart/index.js"
+    },
+    "./treemap-chart": {
+      "types": "./dist/components/treemap-chart/index.d.ts",
+      "import": "./dist/components/treemap-chart/index.js",
+      "default": "./dist/components/treemap-chart/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package charts",
+    "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "@nivo/bar": "^0.99.0",
+    "@nivo/bump": "^0.99.0",
+    "@nivo/chord": "^0.99.0",
+    "@nivo/core": "^0.99.0",
+    "@nivo/funnel": "^0.99.0",
+    "@nivo/heatmap": "^0.99.0",
+    "@nivo/line": "^0.99.0",
+    "@nivo/pie": "^0.99.0",
+    "@nivo/radar": "^0.99.0",
+    "@nivo/radial-bar": "^0.99.0",
+    "@nivo/sankey": "^0.99.0",
+    "@nivo/scatterplot": "^0.99.0",
+    "@nivo/stream": "^0.99.0",
+    "@nivo/sunburst": "^0.99.0",
+    "@nivo/treemap": "^0.99.0",
+    "d3-format": "^3.1.2",
+    "d3-scale": "^4.0.2",
+    "d3-shape": "^3.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@nivo/bar": {
+      "optional": true
+    },
+    "@nivo/bump": {
+      "optional": true
+    },
+    "@nivo/chord": {
+      "optional": true
+    },
+    "@nivo/core": {
+      "optional": true
+    },
+    "@nivo/funnel": {
+      "optional": true
+    },
+    "@nivo/heatmap": {
+      "optional": true
+    },
+    "@nivo/line": {
+      "optional": true
+    },
+    "@nivo/pie": {
+      "optional": true
+    },
+    "@nivo/radar": {
+      "optional": true
+    },
+    "@nivo/radial-bar": {
+      "optional": true
+    },
+    "@nivo/sankey": {
+      "optional": true
+    },
+    "@nivo/scatterplot": {
+      "optional": true
+    },
+    "@nivo/stream": {
+      "optional": true
+    },
+    "@nivo/sunburst": {
+      "optional": true
+    },
+    "@nivo/treemap": {
+      "optional": true
+    },
+    "d3-format": {
+      "optional": true
+    },
+    "d3-scale": {
+      "optional": true
+    },
+    "d3-shape": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@consona/interface-core": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

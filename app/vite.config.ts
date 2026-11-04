@@ -3,13 +3,18 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const interfaceSrc = fileURLToPath(new URL('../src', import.meta.url))
 const interfaceRoot = fileURLToPath(new URL('..', import.meta.url))
+const packagesRoot = fileURLToPath(new URL('../packages', import.meta.url))
+const toolsRegistry = fileURLToPath(new URL('../tools/registry', import.meta.url))
 const demoRoot = fileURLToPath(new URL('.', import.meta.url))
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url))
 const interfaceNm = fileURLToPath(new URL('../node_modules', import.meta.url))
 
 import { docCodeExtractorPlugin } from './vite-plugins/doc-code-extractor'
+
+function pkg(name: string) {
+  return `${packagesRoot}/${name}/src`
+}
 
 export default defineConfig({
   plugins: [docCodeExtractorPlugin(), react(), tailwindcss()] as any,
@@ -17,31 +22,47 @@ export default defineConfig({
     alias: [
       {
         find: '@consona/interface/styles.css',
-        replacement: `${interfaceSrc}/theme/styles.css`,
+        replacement: `${pkg('core')}/theme/styles.css`,
       },
       {
         find: '@consona/interface/registry',
-        replacement: `${interfaceSrc}/registry/index.ts`,
+        replacement: `${toolsRegistry}/index.ts`,
+      },
+      {
+        find: '@consona/interface-core',
+        replacement: `${pkg('core')}/index.ts`,
+      },
+      {
+        find: /^@consona\/interface-(media|orb|sound|dnd|overlay|onboarding|composites|charts|map|gantt|glass|interaction|navigation)$/,
+        replacement: `${packagesRoot}/$1/src/index.ts`,
       },
       {
         find: /^@consona\/interface$/,
-        replacement: `${interfaceSrc}/index.ts`,
+        replacement: `${pkg('interface')}/index.ts`,
       },
       {
-        find: '@consona/interface/gantt',
-        replacement: `${interfaceSrc}/modules/gantt/index.ts`,
+        find: '@consona/interface/audio',
+        replacement: `${pkg('media')}/index.ts`,
       },
       {
-        find: /^@consona\/interface\/(.*)$/,
-        replacement: `${interfaceSrc}/$1`,
+        find: /^@consona\/interface\/(core|media|orb|sound|dnd|overlay|onboarding|composites|charts|map|gantt|glass|interaction|navigation)$/,
+        replacement: `${packagesRoot}/$1/src/index.ts`,
+      },
+      {
+        find: '@registry/registry.json',
+        replacement: `${interfaceRoot}/registry/registry.json`,
+      },
+      {
+        find: '@registry/metadata-registry.json',
+        replacement: `${interfaceRoot}/registry/metadata-registry.json`,
       },
       {
         find: /^@registry$/,
-        replacement: `${interfaceSrc}/registry/index.ts`,
+        replacement: `${toolsRegistry}/index.ts`,
       },
       {
         find: /^@registry\/(.*)$/,
-        replacement: `${interfaceSrc}/registry/$1`,
+        replacement: `${toolsRegistry}/$1`,
       },
       {
         find: '@',
@@ -104,7 +125,7 @@ export default defineConfig({
     port: 5174,
     allowedHosts: true,
     fs: {
-      allow: [demoRoot, interfaceRoot, repoRoot],
+      allow: [demoRoot, interfaceRoot, repoRoot, packagesRoot, toolsRegistry],
     },
   },
 })
