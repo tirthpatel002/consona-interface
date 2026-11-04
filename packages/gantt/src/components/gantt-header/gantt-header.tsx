@@ -148,7 +148,7 @@ const GanttHeaderPrimitive = ({
             data-collapsed={railCollapsed || undefined}
             className={cn(
               'sticky left-0 z-30 flex shrink-0 items-center justify-center border-r border-border bg-bg',
-              'transition-[width] duration-200 ease-out'
+              'motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out'
             )}
             style={{ width: railWidth }}
           >
@@ -245,7 +245,7 @@ export const GanttHeader = createInterfaceComponent<GanttHeaderProps, GanttHeade
     category: 'data',
     description:
       'Sticky Gantt timeline header with virtualized day/week column labels, optional parent bands (week/month), today highlighting, and a title-column collapse / expand control.',
-    version: '1.2.0',
+    version: '1.0.0',
     props: {
       hideRailSpacer: false,
     },

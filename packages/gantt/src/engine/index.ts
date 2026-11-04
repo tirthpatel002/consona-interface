@@ -24,6 +24,8 @@ export {
   nowLinePx,
   applyDragDelta,
   datesFromLayout,
+  rowWindow,
+  prefersReducedMotion,
   timelineWidth,
   rangeFromColumns,
   formatGanttDateTime,
@@ -45,8 +47,10 @@ export {
   type AutoScrollNearEdgesOptions,
   type AutoScrollNearEdgesResult,
   type GanttColumnWindow,
+  type GanttRowWindow,
   type GanttParentBand,
 } from './timeline'
+export { GANTT_ROW_HEIGHT, GANTT_ROW_OVERSCAN } from './types'
 export * from './gantt-engine'
 export * from './dependency-geometry'
 export * from './bar-color'

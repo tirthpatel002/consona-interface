@@ -4,7 +4,8 @@ import type { SoundEmphasis, SoundHandle } from './types'
 
 const HOVER_GAP_MS = 120
 const TYPING_RATE_LIMIT_MS = 40
-const boundRoots = new WeakSet<ParentNode>()
+/** Tracks roots already bound for a given engine to prevent double-binding. */
+const boundRootsByEngine = new WeakMap<SoundEngine, WeakSet<ParentNode>>()
 const handledEvents = new WeakSet<Event>()
 const activeHoldHandles = new WeakMap<HTMLElement, SoundHandle>()
 
@@ -350,16 +351,17 @@ function listenContinuousHold(engine: SoundEngine, root: ParentNode): () => void
     }
   }
 
+  // Only end holds on pointerup/cancel for the originating element — not pointerleave,
+  // which fires when the pointer crosses child boundaries during capture.
   const handlePointerEnd = (event: Event) => {
-    if (event.target instanceof HTMLElement) {
-      endHold(event.target)
-      let curr = event.target.parentElement
-      while (curr && curr !== root) {
-        if (activeHoldHandles.has(curr)) {
-          endHold(curr)
-        }
-        curr = curr.parentElement
+    if (!(event.target instanceof Element)) return
+    let curr: HTMLElement | null = event.target as HTMLElement
+    while (curr && curr !== root && (root as Node).contains(curr)) {
+      if (activeHoldHandles.has(curr)) {
+        endHold(curr)
+        break
       }
+      curr = curr.parentElement
     }
   }
 
@@ -367,13 +369,11 @@ function listenContinuousHold(engine: SoundEngine, root: ParentNode): () => void
   target.addEventListener('pointerdown', handlePointerDown, true)
   target.addEventListener('pointerup', handlePointerEnd, true)
   target.addEventListener('pointercancel', handlePointerEnd, true)
-  target.addEventListener('pointerleave', handlePointerEnd, true)
 
   return () => {
     target.removeEventListener('pointerdown', handlePointerDown, true)
     target.removeEventListener('pointerup', handlePointerEnd, true)
     target.removeEventListener('pointercancel', handlePointerEnd, true)
-    target.removeEventListener('pointerleave', handlePointerEnd, true)
   }
 }
 
@@ -546,10 +546,21 @@ function listenPressRelease(engine: SoundEngine, root: ParentNode): () => void {
 
 /**
  * Attaches high-performance delegated declarative sound listeners to a DOM subtree.
+ * Re-binding the same engine+root is a no-op until the previous binding is torn down.
  */
 export function bindDeclarativeSounds(engine: SoundEngine, root?: ParentNode): () => void {
   if (typeof document === 'undefined') return () => {}
   const scope = root ?? document
+
+  let roots = boundRootsByEngine.get(engine)
+  if (!roots) {
+    roots = new WeakSet<ParentNode>()
+    boundRootsByEngine.set(engine, roots)
+  }
+  if (roots.has(scope)) {
+    return () => {}
+  }
+  roots.add(scope)
 
   const unbindClicks = listenClicks(engine, scope)
   const unbindHold = listenContinuousHold(engine, scope)
@@ -558,7 +569,11 @@ export function bindDeclarativeSounds(engine: SoundEngine, root?: ParentNode): (
   const unbindHover = listenHover(engine, scope)
   const unbindPressRelease = listenPressRelease(engine, scope)
 
+  let active = true
   return () => {
+    if (!active) return
+    active = false
+    roots?.delete(scope)
     unbindClicks()
     unbindHold()
     unbindTyping()

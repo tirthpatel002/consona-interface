@@ -621,7 +621,10 @@ export interface ApplyDragResult {
  * Snaps edges to the view grid; move keeps visual width. Returns {left,width,start,end}.
  */
 export function applyDragDelta(
-  session: Pick<GanttDragSession, 'type' | 'startLeft' | 'startWidth' | 'originalDurationMs'>,
+  session: Pick<
+    GanttDragSession,
+    'type' | 'startLeft' | 'startWidth' | 'originalDurationMs' | 'originalDurationCells'
+  >,
   dx: number,
   cellWidth: number,
   viewRange: GanttViewRange,
@@ -659,6 +662,7 @@ export function applyDragDelta(
 
   const { start, end } = datesFromLayout(left, width, rangeStartMs, cellWidth, viewRange, {
     type: session.type,
+    preserveDurationCells: session.type === 'move' ? session.originalDurationCells : undefined,
     preserveDurationMs: session.type === 'move' ? session.originalDurationMs : undefined,
   })
 
@@ -667,7 +671,8 @@ export function applyDragDelta(
 
 /**
  * Resolve committed dates from a final bar layout.
- * Move preserves original duration when provided. All views snap via {@link snapToUnit}.
+ * Move preserves original duration in calendar cell units (DST-safe) when provided.
+ * All views snap via {@link snapToUnit}.
  */
 export function datesFromLayout(
   left: number,
@@ -675,23 +680,81 @@ export function datesFromLayout(
   rangeStartMs: number,
   cellWidth: number,
   viewRange: GanttViewRange,
-  options: { preserveDurationMs?: number; type?: GanttDragType } = {}
+  options: {
+    preserveDurationMs?: number
+    preserveDurationCells?: number
+    type?: GanttDragType
+  } = {}
 ): { start: Date; end: Date } {
   let startMs = snapToUnit(pxToTime(left, rangeStartMs, cellWidth, viewRange), viewRange)
   let endMs: number
 
-  if (options.type === 'move' && options.preserveDurationMs != null) {
-    endMs = startMs + options.preserveDurationMs
+  if (options.type === 'move' && options.preserveDurationCells != null) {
+    endMs = snapToUnit(
+      addCellUnits(startMs, options.preserveDurationCells, viewRange),
+      viewRange
+    )
+  } else if (options.type === 'move' && options.preserveDurationMs != null) {
+    // Legacy ms path — convert through cell units at the new start for DST safety.
+    const cells = diffCellUnits(startMs, startMs + options.preserveDurationMs, viewRange)
+    endMs = snapToUnit(addCellUnits(startMs, cells, viewRange), viewRange)
   } else {
     endMs = snapToUnit(pxToTime(left + width, rangeStartMs, cellWidth, viewRange), viewRange)
   }
 
   const minSpan = snapDurationMs(viewRange)
   if (!(endMs > startMs)) {
-    endMs = startMs + minSpan
+    endMs = addCellUnits(startMs, snapFraction(viewRange), viewRange)
+    if (!(endMs > startMs)) endMs = startMs + minSpan
   }
 
   return { start: new Date(startMs), end: new Date(endMs) }
+}
+
+/** Visible row index window for vertical virtualization. */
+export interface GanttRowWindow {
+  /** Inclusive start index into the items array. */
+  startIndex: number
+  /** Exclusive end index into the items array. */
+  endIndex: number
+  /** Pixel offset of `startIndex` from the body origin (leading spacer). */
+  offsetPx: number
+}
+
+/**
+ * Compute the vertical row window from scrollTop + viewport height.
+ */
+export function rowWindow(
+  scrollTop: number,
+  viewportHeight: number,
+  rowCount: number,
+  rowHeight: number = 40,
+  overscan: number = 8
+): GanttRowWindow {
+  if (rowCount <= 0 || rowHeight <= 0) {
+    return { startIndex: 0, endIndex: 0, offsetPx: 0 }
+  }
+  const viewH = Math.max(0, viewportHeight)
+  const startIndex = Math.max(0, Math.floor(Math.max(0, scrollTop) / rowHeight) - overscan)
+  const endIndex = Math.min(
+    rowCount,
+    Math.ceil((Math.max(0, scrollTop) + viewH) / rowHeight) + overscan
+  )
+  return {
+    startIndex,
+    endIndex,
+    offsetPx: startIndex * rowHeight,
+  }
+}
+
+/** Whether the user prefers reduced motion (SSR-safe). */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
 }
 
 /** Default extra columns mounted beyond the visible horizontal viewport. */
@@ -837,6 +900,7 @@ export function applyLiveDragLayout(
   if (!drag || drag.itemId !== itemId) return layout
   const { start, end } = datesFromLayout(drag.left, drag.width, rangeStartMs, cellWidth, viewRange, {
     type: drag.type,
+    preserveDurationCells: drag.type === 'move' ? drag.originalDurationCells : undefined,
     preserveDurationMs: drag.type === 'move' ? drag.originalDurationMs : undefined,
   })
   return {

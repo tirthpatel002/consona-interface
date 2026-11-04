@@ -80,11 +80,13 @@
     "build": "tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package gantt",
     "prebuild": "node --input-type=module -e \"import { rm } from 'node:fs/promises'; await rm('dist', { recursive: true, force: true })\"",
     "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test scripts/verify-timeline.mjs",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "@heroicons/react": "^2.0.0"
   },
   "dependencies": {
     "@consona/interface-core": "^1.0.0"

@@ -167,7 +167,7 @@ export interface SoundRecipe {
 }
 
 /**
- * Canonical 9 semantic interaction cue names.
+ * Canonical semantic interaction cue names.
  */
 export type CanonicalSoundName =
   | 'tap'
@@ -284,6 +284,8 @@ export interface SoundPlayOptions {
   emphasis?: SoundEmphasis
   /** Specific variant for this cue (e.g. 'mechanical', 'soft', 'pluck', etc.). */
   variant?: string
+  /** Stereo panning position for this playback (-1.0 to +1.0). */
+  pan?: number
   /** Inferred or explicit interaction context for adaptive synthesis. */
   context?: AdaptiveSoundContext
 }
@@ -392,14 +394,25 @@ export interface SoundEngineOptions {
   defaultEnabled?: boolean
   /** Initial mute state (default false). */
   defaultMuted?: boolean
-  /** Custom storage adapter for state persistence (Rule ENG2). */
+  /**
+   * Custom storage adapter for state persistence (Rule ENG2).
+   * Persistence is opt-in: omit this to avoid sharing preference keys across engines.
+   * `SoundProvider` supplies a browser localStorage adapter by default.
+   */
   storageAdapter?: StorageAdapter
-  /** Custom storage key (default 'config'). */
+  /**
+   * Custom storage key under the `consona:sound:` prefix (default 'config').
+   * Pass a unique key when multiple engines should persist independently.
+   */
   storageKey?: string
   /** Custom sound recipes or variants to register on initialization. */
   customRecipes?: Record<string, SoundRecipe | SoundCueDefinition>
   /** Whether to automatically wire declarative DOM data-sound-* attributes upon initialization. */
   autoBind?: boolean
+  /**
+   * When true (default), skip play/start while the user prefers reduced motion.
+   */
+  respectReducedMotion?: boolean
 }
 
 /**

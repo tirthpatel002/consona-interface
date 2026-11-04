@@ -265,9 +265,15 @@ export function useCursorSound(
     return () => {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
+      if (elementRef.current) {
+        elementRef.current.removeEventListener('pointerenter', onPointerEnter as unknown as EventListener)
+        elementRef.current.removeEventListener('pointermove', onPointerMove as unknown as EventListener)
+        elementRef.current.removeEventListener('pointerleave', onPointerLeave as unknown as EventListener)
+        elementRef.current = null
+      }
       actionsRef.current?.stop(0.04)
     }
-  }, [])
+  }, [onPointerEnter, onPointerMove, onPointerLeave])
 
   const isActive = !disabled
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSound } from '../context'
+import { parseCueIdentifier } from '../engine/recipes'
 import type { SoundEmphasis, SoundName } from '../engine/types'
 
 export type DragCueOption =
@@ -132,11 +133,11 @@ function parseCue(
   if (opt === false) return null
   if (!opt) return { cue: defaultCue, variant: defaultVariant }
   if (typeof opt === 'string') {
-    if (opt.includes(':')) {
-      const [c, v] = opt.split(':')
-      return { cue: c as SoundName, variant: v }
+    const parsed = parseCueIdentifier(opt)
+    return {
+      cue: (parsed.cue || defaultCue) as SoundName,
+      variant: parsed.variant ?? defaultVariant,
     }
-    return { cue: opt as SoundName, variant: defaultVariant }
   }
   return {
     cue: opt.cue || defaultCue,
@@ -323,18 +324,22 @@ export function useDragSound(
 
     // Trigger navigate:slide (or configured variant) acoustic stride during active dragging
     if (accumulatedDeltaRef.current >= strideDist && currentSpeed >= minVel && eng.enabled && !eng.isMuted) {
-      const stepsToFire = Math.floor(accumulatedDeltaRef.current / strideDist)
       accumulatedDeltaRef.current %= strideDist
-      totalDragsRef.current += stepsToFire
+      totalDragsRef.current += 1
 
       const dynamicEmphasis: SoundEmphasis =
         norm > 0.6 ? 'strong' : norm > 0.2 ? 'normal' : 'subtle'
       const dynamicVol = Math.min(0.85, 0.35 + norm * 0.45) * (opts.volume ?? 1)
+      const pan =
+        opts.spatialPanning !== false && typeof window !== 'undefined' && window.innerWidth > 0
+          ? Math.max(-1, Math.min(1, (currentX / window.innerWidth) * 2 - 1))
+          : undefined
 
       playRef.current(opts.cue ?? 'navigate', {
         variant: opts.variant ?? 'slide',
         emphasis: opts.emphasis ?? dynamicEmphasis,
         volume: dynamicVol,
+        pan,
         context: {
           inputMethod: 'mouse',
           cadenceDeltaMs: Math.max(25, Math.min(220, 1000 / (currentSpeed * 28 + 1))),

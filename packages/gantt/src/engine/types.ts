@@ -76,8 +76,13 @@ export interface GanttDragSession {
   startLeft: number
   /** Bar width when the gesture started. */
   startWidth: number
-  /** Original duration in milliseconds (preserved on move). */
+  /** Original duration in milliseconds (legacy; prefer originalDurationCells). */
   originalDurationMs: number
+  /**
+   * Original duration in calendar cell units for the active viewRange.
+   * Preserved on move so DST transitions do not stretch/compress the bar.
+   */
+  originalDurationCells: number
   /** Live preview left. */
   left: number
   /** Live preview width. */
@@ -186,3 +191,9 @@ export interface GanttEngineOptions {
   /** Override initial now timestamp (testing). */
   nowMs?: number
 }
+
+/** Default row height in pixels (matches `h-10` row chrome). */
+export const GANTT_ROW_HEIGHT = 40
+
+/** Extra rows mounted beyond the visible vertical viewport. */
+export const GANTT_ROW_OVERSCAN = 8

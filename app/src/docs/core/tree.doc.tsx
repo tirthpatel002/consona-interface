@@ -11,7 +11,6 @@ import {
   FolderOpenIcon,
   DocumentTextIcon,
   CodeBracketIcon,
-  DocumentChartBarIcon,
 } from '@heroicons/react/20/solid'
 
 interface FileNode {
@@ -88,14 +87,20 @@ export const treeDoc: ComponentDocSpec = {
       const renderTreeItem = (item: FileNode) => (
         <TreeItem key={item.id} id={item.id} textValue={item.name}>
           <TreeContent>
-            <div className="flex items-center gap-2 py-0.5 min-w-0">
-              {item.type === 'folder' ? (
-                <FolderIcon className="size-4 text-primary shrink-0" />
-              ) : (
-                <DocumentTextIcon className="size-4 text-muted-fg shrink-0" />
-              )}
-              <span className="truncate text-sm font-mono">{item.name}</span>
-            </div>
+            {({ isExpanded }) => (
+              <div className="flex items-center gap-2 py-0.5 min-w-0">
+                {item.type === 'folder' ? (
+                  isExpanded ? (
+                    <FolderOpenIcon className="size-4 text-primary shrink-0 transition-transform duration-200" />
+                  ) : (
+                    <FolderIcon className="size-4 text-primary shrink-0 transition-transform duration-200" />
+                  )
+                ) : (
+                  <DocumentTextIcon className="size-4 text-muted-fg shrink-0" />
+                )}
+                <span className="truncate text-sm font-mono">{item.name}</span>
+              </div>
+            )}
           </TreeContent>
           {item.children?.map(renderTreeItem)}
         </TreeItem>
@@ -139,21 +144,27 @@ export const treeDoc: ComponentDocSpec = {
                 return (
                   <TreeItem key={node.id} id={node.id} textValue={node.name}>
                     <TreeContent>
-                      <div className="flex items-center justify-between w-full pr-2 py-0.5">
-                        <div className="flex items-center gap-2">
-                          {node.type === 'folder' ? (
-                            <FolderIcon className="size-4 text-primary" />
-                          ) : (
-                            <CodeBracketIcon className="size-4 text-accent" />
+                      {({ isExpanded }) => (
+                        <div className="flex items-center justify-between w-full pr-2 py-0.5">
+                          <div className="flex items-center gap-2">
+                            {node.type === 'folder' ? (
+                              isExpanded ? (
+                                <FolderOpenIcon className="size-4 text-primary" />
+                              ) : (
+                                <FolderIcon className="size-4 text-primary" />
+                              )
+                            ) : (
+                              <CodeBracketIcon className="size-4 text-accent" />
+                            )}
+                            <span className="text-xs font-mono font-medium">{node.name}</span>
+                          </div>
+                          {node.type === 'file' && (
+                            <Badge intent="outline" className="text-[10px] uppercase font-mono px-1 py-0">
+                              {node.extension}
+                            </Badge>
                           )}
-                          <span className="text-xs font-mono font-medium">{node.name}</span>
                         </div>
-                        {node.type === 'file' && (
-                          <Badge intent="outline" className="text-[10px] uppercase font-mono px-1 py-0">
-                            {node.extension}
-                          </Badge>
-                        )}
-                      </div>
+                      )}
                     </TreeContent>
                     {node.children?.map(renderNode)}
                   </TreeItem>

@@ -8,6 +8,7 @@ import { cn } from '@consona/interface-core'
 import { createInterfaceComponent } from '@consona/interface-core'
 import { renderSlot } from '@consona/interface-core'
 import type { SlotComponents, SlotPropsMap } from '@consona/interface-core'
+import { GANTT_ROW_HEIGHT, type GanttRowWindow } from '../../engine'
 import { useOptionalGantt } from '../../hooks'
 
 export interface GanttRailLabelSlotProps {
@@ -40,6 +41,14 @@ export interface GanttRailSlots {
 export interface GanttRailProps extends React.ComponentPropsWithoutRef<'div'> {
   /** Rail width. Default: 12rem. */
   width?: string | number
+  /** Row height in pixels. Default: 40. */
+  rowHeight?: number
+  /** Vertical virtualization window (shared with timeline). */
+  rowWindow?: GanttRowWindow
+  /** Total content height for trailing spacer. */
+  totalHeight?: number
+  /** Disable width transition when reduced motion is preferred. */
+  reduceMotion?: boolean
   /** Custom CSS classes. */
   className?: string
   /** Slot overrides. */
@@ -62,7 +71,6 @@ function DefaultRailOverflow({ item }: GanttRailOverflowSlotProps) {
   const barStart = layout.left
   const barEnd = layout.left + layout.width
 
-  // Same rule as Elixir: start left of viewport → left arrow; end right of viewport → right.
   const showLeft = visibleLeft > barStart
   const showRight = visibleRight < barEnd
   if (!showLeft && !showRight) return null
@@ -135,6 +143,10 @@ function DefaultRailOverflow({ item }: GanttRailOverflowSlotProps) {
 
 const GanttRailPrimitive = ({
   width = '12rem',
+  rowHeight = GANTT_ROW_HEIGHT,
+  rowWindow: rowWin,
+  totalHeight,
+  reduceMotion = false,
   className,
   children,
   slots,
@@ -146,54 +158,68 @@ const GanttRailPrimitive = ({
   const accessors = gantt?.helpers.context.accessors
   const collapsed = gantt?.helpers.context.railCollapsed ?? false
 
+  const start = rowWin?.startIndex ?? 0
+  const end = rowWin?.endIndex ?? items.length
+  const offsetPx = rowWin?.offsetPx ?? 0
+  const visible = items.slice(start, end)
+  const bodyHeight = totalHeight ?? items.length * rowHeight
+  const trailing = Math.max(0, bodyHeight - offsetPx - visible.length * rowHeight)
+
   return (
     <div
       data-slot="gantt-rail"
       data-collapsed={collapsed || undefined}
       className={cn(
         'sticky left-0 z-20 flex shrink-0 flex-col self-start overflow-hidden border-r border-border bg-bg',
-        'transition-[width] duration-200 ease-out',
+        !reduceMotion && 'transition-[width] duration-200 ease-out',
         className
       )}
-      style={{ width }}
+      style={{ width, height: bodyHeight || undefined }}
       {...props}
     >
       {children != null
         ? collapsed
           ? null
           : children
-        : items.map((item, index) => {
-            const id = accessors ? accessors.getId(item) : String(index)
-            const label =
-              accessors?.getLabel?.(item) ??
-              (accessors ? accessors.getId(item) : String(index))
-            return (
-              <div
-                key={id}
-                data-slot="gantt-rail-row"
-                className={cn(
-                  'flex h-10 items-center gap-space-xs border-b border-border/50',
-                  collapsed ? 'justify-center px-0' : 'px-space-md'
-                )}
-              >
-                {/* Labels / overflow hide while collapsed — titles move onto bars. */}
-                {!collapsed && (
-                  <>
-                    {renderSlot(
-                      slots?.label,
-                      { id, label, item, index, ...(slotProps?.label as object) },
-                      { defaultComponent: DefaultRailLabel }
+        : (
+            <>
+              {offsetPx > 0 && <div aria-hidden style={{ height: offsetPx }} />}
+              {visible.map((item, i) => {
+                const index = start + i
+                const id = accessors ? accessors.getId(item) : String(index)
+                const label =
+                  accessors?.getLabel?.(item) ??
+                  (accessors ? accessors.getId(item) : String(index))
+                return (
+                  <div
+                    key={id || `rail-${index}`}
+                    data-slot="gantt-rail-row"
+                    className={cn(
+                      'flex items-center gap-space-xs border-b border-border/50',
+                      collapsed ? 'justify-center px-0' : 'px-space-md'
                     )}
-                    {renderSlot(
-                      slots?.overflow,
-                      { item, id, index, ...(slotProps?.overflow as object) },
-                      { defaultComponent: DefaultRailOverflow }
+                    style={{ height: rowHeight }}
+                  >
+                    {!collapsed && (
+                      <>
+                        {renderSlot(
+                          slots?.label,
+                          { id, label, item, index, ...(slotProps?.label as object) },
+                          { defaultComponent: DefaultRailLabel }
+                        )}
+                        {renderSlot(
+                          slots?.overflow,
+                          { item, id, index, ...(slotProps?.overflow as object) },
+                          { defaultComponent: DefaultRailOverflow }
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </div>
-            )
-          })}
+                  </div>
+                )
+              })}
+              {trailing > 0 && <div aria-hidden style={{ height: trailing }} />}
+            </>
+          )}
     </div>
   )
 }
@@ -204,7 +230,7 @@ export const GanttRail = createInterfaceComponent<GanttRailProps, GanttRailSlots
     category: 'data',
     description:
       'Sticky left rail listing Gantt row labels; shows left/right arrows when a bar start/end (or the whole bar) is outside the viewport.',
-    version: '1.2.0',
+    version: '1.0.0',
     props: {},
     slots: {
       label: undefined,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSound } from '../context'
 import type { SoundEmphasis, SoundName, SoundPlayOptions } from '../engine/types'
 
@@ -7,8 +7,8 @@ export interface UseSoundTriggerOptions {
   cue?: SoundName
   /** Sound variant identifier (e.g. 'mechanical', 'soft', 'pluck'). */
   variant?: string
-  /** Trigger interaction event modality: 'click' | 'press' | 'hover' | 'toggle' | 'custom'. */
-  event?: 'click' | 'press' | 'hover' | 'toggle' | 'custom'
+  /** Trigger interaction event modality. */
+  event?: 'click' | 'press' | 'hover' | 'hold' | 'start' | 'stop' | 'toggle-loop' | 'toggle' | 'custom'
   /** Sound emphasis intensity level. */
   emphasis?: SoundEmphasis
   /** Custom volume level multiplier (0.0 to 1.0). */
@@ -68,23 +68,60 @@ export function useSoundTrigger(options: UseSoundTriggerOptions = {}): UseSoundT
     onTrigger,
   } = options
 
-  const { play, enabled, isMuted } = useSound()
+  const { play, start, stop, isContinuousPlaying, enabled, isMuted } = useSound()
   const [isTriggered, setIsTriggered] = useState(false)
+  const triggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (triggerTimerRef.current) clearTimeout(triggerTimerRef.current)
+    }
+  }, [])
 
   const trigger = useCallback(
     (overrideOptions?: SoundPlayOptions) => {
       if (disabled) return
       setIsTriggered(true)
-      play(cue, {
-        variant,
-        emphasis,
-        volume,
-        ...overrideOptions,
-      })
+      if (event === 'start' || event === 'hold') {
+        start(cue, {
+          variant,
+          emphasis,
+          volume,
+          ...overrideOptions,
+        })
+      } else if (event === 'stop') {
+        stop(cue)
+      } else if (event === 'toggle-loop' || event === 'toggle') {
+        if (isContinuousPlaying(cue, variant)) {
+          stop(cue)
+        } else {
+          start(cue, { variant, emphasis, volume, ...overrideOptions })
+        }
+      } else {
+        play(cue, {
+          variant,
+          emphasis,
+          volume,
+          ...overrideOptions,
+        })
+      }
       onTrigger?.()
-      setTimeout(() => setIsTriggered(false), 150)
+      if (triggerTimerRef.current) clearTimeout(triggerTimerRef.current)
+      triggerTimerRef.current = setTimeout(() => setIsTriggered(false), 150)
     },
-    [disabled, play, cue, variant, emphasis, volume, onTrigger]
+    [
+      disabled,
+      play,
+      start,
+      stop,
+      isContinuousPlaying,
+      cue,
+      variant,
+      emphasis,
+      volume,
+      onTrigger,
+      event,
+    ]
   )
 
   const handleClick = useCallback(

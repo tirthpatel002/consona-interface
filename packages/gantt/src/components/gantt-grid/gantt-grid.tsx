@@ -63,7 +63,7 @@ export const GanttGrid = createInterfaceComponent<GanttGridProps, GanttGridSlots
     name: 'GanttGrid',
     category: 'data',
     description: 'Non-interactive virtualized background column grid aligning with the Gantt header cells.',
-    version: '1.1.0',
+    version: '1.0.0',
     props: {},
     slots: {},
   },

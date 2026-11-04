@@ -19,6 +19,7 @@ import {
   formatGanttDateTime,
   layoutBar,
   nowLinePx,
+  prefersReducedMotion,
   timelineWidth,
   toMs,
   type GanttBarLayout,
@@ -148,8 +149,11 @@ export interface GanttHookHelpers {
 }
 
 export interface GanttHookAriaProps {
-  /** Root role. */
-  role: 'grid'
+  /**
+   * Root landmark role. The scroll viewport owns `role="grid"`;
+   * the outer shell stays a generic group.
+   */
+  role: 'group'
   /** Accessible label. */
   'aria-label': string
   /** Busy while dragging. */
@@ -233,13 +237,15 @@ function buildGanttReturn(ctx: GanttContextValue): UseGanttReturn {
       onCreate?.(event)
       engine.emit('gantt:create', event)
     },
-    scrollToPx: (px, behavior = 'smooth') => {
+    scrollToPx: (px, behavior) => {
       const el = scrollerRef.current
       if (!el) return
       const rail = railWidthPx
       const viewW = Math.max(0, el.clientWidth - rail)
       const target = Math.max(0, px - viewW / 2)
-      el.scrollTo({ left: target, behavior })
+      const resolved =
+        behavior ?? (prefersReducedMotion() ? 'auto' : 'smooth')
+      el.scrollTo({ left: target, behavior: resolved })
       engine.setViewport(el.scrollLeft, viewW)
     },
   }
@@ -289,7 +295,7 @@ function buildGanttReturn(ctx: GanttContextValue): UseGanttReturn {
       context: ctx,
     },
     ariaProps: {
-      role: 'grid',
+      role: 'group',
       'aria-label': 'Gantt chart',
       'aria-busy': state.drag != null || state.dependencyLink != null,
     },

@@ -1,3 +1,4 @@
+import type React from 'react'
 import type { ReactNode } from 'react'
 
 /** Margin geometry object standard in Nivo charts */
@@ -102,9 +103,9 @@ export interface BaseChartProps extends ChartDimensionProps {
   palette?: string | string[]
   /** Props forwarded to the outer ChartContainer card */
   containerProps?: React.HTMLAttributes<HTMLDivElement>
-  /** Low-level engine pass-through props forwarded directly to the underlying Nivo or SVG visualizer */
+  /** Low-level engine pass-through props forwarded directly to the underlying SVG/Canvas visualizer */
   chartProps?: Record<string, any>
-  /** Alias for chartProps */
+  /** @deprecated Prefer `chartProps`. Kept as an alias for engine pass-through. */
   nivoProps?: Record<string, any>
   /** Item click event handler */
   onItemClick?: ChartItemClickHandler<any>

@@ -10,6 +10,7 @@ import {
   buildColumns,
   datesFromLayout,
   defaultCellWidth,
+  diffCellUnits,
   rangeFromColumns,
   timelineWidth,
   toMs,
@@ -127,6 +128,7 @@ export class GanttEngine extends BaseEngine<GanttEngineState> {
   }
 
   public setDependenciesEnabled(enabled: boolean): void {
+    if (enabled === this.state.dependenciesEnabled) return
     this.setState({ dependenciesEnabled: enabled })
   }
 
@@ -148,6 +150,10 @@ export class GanttEngine extends BaseEngine<GanttEngineState> {
       startLeft: input.left,
       startWidth: input.width,
       originalDurationMs: Math.max(0, input.endMs - input.startMs),
+      originalDurationCells: Math.max(
+        0,
+        diffCellUnits(input.startMs, input.endMs, this.state.viewRange)
+      ),
       left: input.left,
       width: input.width,
     }
@@ -197,6 +203,7 @@ export class GanttEngine extends BaseEngine<GanttEngineState> {
       this.state.viewRange,
       {
         type: drag.type,
+        preserveDurationCells: drag.type === 'move' ? drag.originalDurationCells : undefined,
         preserveDurationMs: drag.type === 'move' ? drag.originalDurationMs : undefined,
       }
     )

@@ -6,13 +6,16 @@ import React, {
   useRef,
   useSyncExternalStore,
 } from 'react'
-import { createSoundEngine, SoundEngine } from './engine/sound-engine'
+import {
+  createLocalStorageAdapter,
+  createSoundEngine,
+  SoundEngine,
+} from './engine/sound-engine'
 import type {
   SoundContinuousOptions,
   SoundCueDefinition,
   SoundEngineOptions,
   SoundHandle,
-  SoundName,
   SoundPlayOptions,
   SoundRecipe,
   SoundState,
@@ -77,6 +80,9 @@ export interface SoundProviderProps extends SoundEngineOptions {
 
 /**
  * High-performance Web Audio interaction sound synthesis provider.
+ *
+ * Owns a local engine by default. External `engine` instances are never destroyed.
+ * Strict Mode safe: destroy is deferred so remount reuses the live engine.
  */
 export function SoundProvider({
   engine: propEngine,
@@ -85,27 +91,44 @@ export function SoundProvider({
   defaultEnabled = true,
   defaultMuted = false,
   storageAdapter,
-  storageKey,
+  storageKey = 'config',
   customRecipes,
   autoBind = true,
+  respectReducedMotion = true,
   children,
 }: SoundProviderProps) {
   const engineRef = useRef<SoundEngine | null>(null)
+  const ownedRef = useRef(false)
+  const mountedRef = useRef(false)
+  const optionsRef = useRef({
+    defaultVolume: options?.defaultVolume ?? defaultVolume,
+    defaultEnabled: options?.defaultEnabled ?? defaultEnabled,
+    defaultMuted: options?.defaultMuted ?? defaultMuted,
+    storageAdapter:
+      options?.storageAdapter ?? storageAdapter ?? createLocalStorageAdapter(),
+    storageKey: options?.storageKey ?? storageKey,
+    customRecipes: options?.customRecipes ?? customRecipes,
+    autoBind: options?.autoBind ?? autoBind,
+    respectReducedMotion: options?.respectReducedMotion ?? respectReducedMotion,
+  })
+  optionsRef.current = {
+    defaultVolume: options?.defaultVolume ?? defaultVolume,
+    defaultEnabled: options?.defaultEnabled ?? defaultEnabled,
+    defaultMuted: options?.defaultMuted ?? defaultMuted,
+    storageAdapter:
+      options?.storageAdapter ?? storageAdapter ?? createLocalStorageAdapter(),
+    storageKey: options?.storageKey ?? storageKey,
+    customRecipes: options?.customRecipes ?? customRecipes,
+    autoBind: options?.autoBind ?? autoBind,
+    respectReducedMotion: options?.respectReducedMotion ?? respectReducedMotion,
+  }
 
-  if (!engineRef.current) {
-    if (propEngine) {
-      engineRef.current = propEngine
-    } else {
-      engineRef.current = createSoundEngine({
-        defaultVolume: options?.defaultVolume ?? defaultVolume,
-        defaultEnabled: options?.defaultEnabled ?? defaultEnabled,
-        defaultMuted: options?.defaultMuted ?? defaultMuted,
-        storageAdapter: options?.storageAdapter ?? storageAdapter,
-        storageKey: options?.storageKey ?? storageKey,
-        customRecipes: options?.customRecipes ?? customRecipes,
-        autoBind: options?.autoBind ?? autoBind,
-      })
-    }
+  if (propEngine) {
+    engineRef.current = propEngine
+    ownedRef.current = false
+  } else if (!engineRef.current) {
+    engineRef.current = createSoundEngine(optionsRef.current)
+    ownedRef.current = true
   }
 
   const engine = engineRef.current!
@@ -117,11 +140,28 @@ export function SoundProvider({
   )
 
   useEffect(() => {
+    mountedRef.current = true
+
     return () => {
-      if (!propEngine) {
-        engineRef.current?.destroy()
-        engineRef.current = null
-      }
+      mountedRef.current = false
+      if (!ownedRef.current) return
+
+      const eng = engineRef.current
+      if (!eng) return
+
+      // Defer destroy: Strict Mode remount sets mountedRef before this microtask runs.
+      void Promise.resolve().then(() => {
+        if (mountedRef.current) return
+        if (engineRef.current !== eng) return
+        try {
+          eng.destroy()
+        } catch {
+          /* ignore */
+        }
+        if (engineRef.current === eng) {
+          engineRef.current = null
+        }
+      })
     }
   }, [propEngine])
 
@@ -138,7 +178,7 @@ export function SoundProvider({
 
       play: (cue, opts) => engine.play(cue, opts),
       start: (cue, opts) => engine.start(cue, opts),
-      playLoop: (cue, opts) => engine.playLoop(cue, opts),
+      playLoop: (cue, opts) => engine.start(cue, opts),
       stop: (c, r) => engine.stop(c, r),
       stopAll: (r) => engine.stopAll(r),
       isContinuousPlaying: (c, v) => engine.isContinuousPlaying(c, v),
@@ -156,4 +196,3 @@ export function SoundProvider({
 
   return <SoundContext.Provider value={contextValue}>{children}</SoundContext.Provider>
 }
-

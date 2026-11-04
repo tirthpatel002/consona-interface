@@ -160,9 +160,8 @@ export function useScrollSound(
 
     // Trigger toggle latch click every stepDistance pixels
     if (accumulatedDeltaRef.current >= stepDist && currentSpeed >= minVel) {
-      const stepsToFire = Math.floor(accumulatedDeltaRef.current / stepDist)
       accumulatedDeltaRef.current %= stepDist
-      totalLatchesRef.current += stepsToFire
+      totalLatchesRef.current += 1
 
       // Modulate emphasis and volume based on scroll speed
       const dynamicEmphasis: SoundEmphasis =
@@ -180,7 +179,7 @@ export function useScrollSound(
       })
     }
 
-    // Schedule throttled visual state updates via rAF
+    // Schedule throttled visual state updates via rAF (including isScrolling)
     if (rafIdRef.current === null) {
       rafIdRef.current = requestAnimationFrame(() => {
         rafIdRef.current = null
@@ -192,12 +191,13 @@ export function useScrollSound(
         if (currentDirection !== 'none') {
           setDirection(currentDirection)
         }
+        if (currentSpeed >= minVel) {
+          setIsScrolling(true)
+        }
       })
     }
 
     if (currentSpeed >= minVel) {
-      setIsScrolling(true)
-
       if (idleTimerRef.current) {
         clearTimeout(idleTimerRef.current)
       }
@@ -244,8 +244,12 @@ export function useScrollSound(
     return () => {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
+      if (elementRef.current) {
+        elementRef.current.removeEventListener('scroll', onScroll as unknown as EventListener)
+        elementRef.current = null
+      }
     }
-  }, [])
+  }, [onScroll])
 
   const isActive = enabled && !isMuted && !disabled
 

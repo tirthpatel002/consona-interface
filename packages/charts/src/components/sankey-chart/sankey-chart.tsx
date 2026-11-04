@@ -26,6 +26,9 @@ import {
 import { ChartContext, ChartProvider, useChartContext } from '../chart-context'
 import { useChartTheme } from '../../hooks/use-chart-theme'
 import { useChartDimensions } from '../../hooks/use-chart-dimensions'
+import { shouldRenderHeadlessChart } from '../../utils/chart-children'
+import { renderChartTooltip } from '../../utils/chart-tooltip-render'
+import { useChartMotion } from '../../hooks/use-chart-motion'
 import type {
   ChartContainerVariant,
   ChartMargin,
@@ -135,26 +138,6 @@ export interface SankeyChartProps extends Omit<React.HTMLAttributes<HTMLDivEleme
    Sankey Chart Primitive
    ========================================================================== */
 
-function findTooltipElement(node: React.ReactNode): React.ReactElement | null {
-  if (!node) return null
-  for (const child of React.Children.toArray(node)) {
-    if (React.isValidElement(child)) {
-      if (
-        child.type === ChartTooltip ||
-        (child.type as any)?.displayName === 'ChartTooltip' ||
-        (child.type as any)?.name === 'ChartTooltip' ||
-        (child.props as any)?.['data-slot'] === 'chart-tooltip'
-      ) {
-        return child
-      }
-      if ((child.props as any)?.children) {
-        const found = findTooltipElement((child.props as any).children)
-        if (found) return found
-      }
-    }
-  }
-  return null
-}
 
 function SankeyChartPrimitive({
   data = { nodes: [], links: [] },
@@ -190,6 +173,7 @@ function SankeyChartPrimitive({
 }: SankeyChartProps) {
   const { theme, colors } = useChartTheme({ palette })
   const { ref, width, isReady } = useChartDimensions({ height, aspectRatio })
+  const motionProps = useChartMotion()
 
   const { nodes: rawNodes = [], links: rawLinks = [] } = data || {}
   const { nodes, links, safeGraphData } = React.useMemo(() => {
@@ -274,60 +258,38 @@ function SankeyChartPrimitive({
     valueFormat,
     theme,
     ...(onItemClick ? { onClick: onItemClick } : {}),
+    ...motionProps,
     nodeTooltip: ({ node }: any) => {
       if (!node) return null
-      const compositeTooltip = findTooltipElement(children)
-      if (compositeTooltip) {
-        const tooltipPayload = {
+      return renderChartTooltip({
+        children,
+        slots,
+        slotProps,
+        payload: {
           title: String(node.label || node.id || ''),
-          label: 'Total Volume',
+          label: 'Volume',
           value: node.formattedValue,
           color: node.color,
           node,
           datum: node,
-          ...(slotProps.tooltip as any),
-        }
-        const tooltipPropsObj = (compositeTooltip.props || {}) as Record<string, any>
-        if (typeof tooltipPropsObj.children === 'function') {
-          return (
-            <ChartTooltip {...tooltipPropsObj}>
-              {tooltipPropsObj.children(tooltipPayload)}
-            </ChartTooltip>
-          )
-        }
-        return React.cloneElement(compositeTooltip, tooltipPayload)
-      }
-      if (slots.tooltip) {
-        return renderSlot(slots.tooltip, {
-          ...slotProps?.tooltip,
-          title: String(node.label || node.id || ''),
-          label: 'Total Volume',
-          value: node.formattedValue,
-          color: node.color,
-          node,
-          datum: node,
-          ...(slotProps.tooltip as any),
-        })
-      }
-      return (
-        <ChartTooltip
-          title={String(node.label || node.id || '')}
-          label="Volume"
-          value={node.formattedValue}
-          color={node.color}
-        />
-      )
+        },
+      })
     },
     linkTooltip: ({ link }: any) => {
       if (!link) return null
-      return (
-        <ChartTooltip
-          title={`${link.source?.id ?? ''} → ${link.target?.id ?? ''}`}
-          label="Flow"
-          value={link.formattedValue}
-          color={link.color}
-        />
-      )
+      return renderChartTooltip({
+        children,
+        slots,
+        slotProps,
+        payload: {
+          title: `${link.source?.id ?? ''} → ${link.target?.id ?? ''}`,
+          label: 'Flow',
+          value: link.formattedValue,
+          color: link.color,
+          link,
+          datum: link,
+        },
+      })
     },
     ...chartProps,
     ...nivoProps,
@@ -367,7 +329,7 @@ function SankeyChartPrimitive({
     chartNode: visualizerNode,
   }
 
-  if (children != null) {
+  if (shouldRenderHeadlessChart(children)) {
     return (
       <ChartProvider value={contextValue}>
         {children}
@@ -399,7 +361,13 @@ function SankeyChartPrimitive({
         )}
       </div>
 
-      {renderSlot(slots.legend, slotProps.legend)}
+      {legendItems.length > 0 && (
+        <div className="mb-3">
+          {renderSlot(slots.legend, slotProps.legend) ?? (
+            <ChartLegend items={legendItems} />
+          )}
+        </div>
+      )}
 
       {renderSlot(
         slots.canvas,
@@ -407,7 +375,8 @@ function SankeyChartPrimitive({
           ref,
           height,
           isLoading,
-          isEmpty: !data || !data.nodes || data.nodes.length === 0,
+          isEmpty: !hasValidGraph,
+          'aria-label': title || 'Sankey chart',
           onContextMenu: slotProps.container?.onContextMenu,
           ...slotProps?.canvas,
           children: isLoading ? (
@@ -422,7 +391,8 @@ function SankeyChartPrimitive({
           ref={ref}
           height={height}
           isLoading={isLoading}
-          isEmpty={!data || !data.nodes || data.nodes.length === 0}
+          isEmpty={!hasValidGraph}
+          aria-label={title || 'Sankey chart'}
           onContextMenu={slotProps.container?.onContextMenu}
         >
           {isLoading ? (

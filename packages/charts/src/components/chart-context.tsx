@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useRef } from 'react'
 import type { ChartLegendItem } from './chart-container'
 import type { ChartTimeRange } from '../types/common'
 import { createTooltipStore, type TooltipStore, ChartTooltipStoreContext } from '../tooltip-registry'
@@ -49,12 +49,27 @@ export interface ChartProviderProps<TData = any> {
 }
 
 export function ChartProvider<TData = any>({ value, children }: ChartProviderProps<TData>) {
+  const ownedStoreRef = useRef<TooltipStore | null>(null)
+
   // Ensure a dedicated tooltip store exists for this chart instance
   const tooltipStore = useMemo(() => {
-    return value.tooltipStore || createTooltipStore({
-      persistInCanvas: value.persistTooltipInCanvas ?? true,
-    })
+    if (value.tooltipStore) return value.tooltipStore
+    if (!ownedStoreRef.current) {
+      ownedStoreRef.current = createTooltipStore({
+        persistInCanvas: value.persistTooltipInCanvas ?? true,
+      })
+    }
+    return ownedStoreRef.current
   }, [value.tooltipStore, value.persistTooltipInCanvas])
+
+  useEffect(() => {
+    return () => {
+      if (ownedStoreRef.current && ownedStoreRef.current === tooltipStore) {
+        ownedStoreRef.current.destroy()
+        ownedStoreRef.current = null
+      }
+    }
+  }, [tooltipStore])
 
   const mergedValue = useMemo(() => ({
     ...value,

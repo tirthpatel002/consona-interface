@@ -129,13 +129,16 @@
     "@nivo/scatterplot": "^0.99.0",
     "@nivo/stream": "^0.99.0",
     "@nivo/sunburst": "^0.99.0",
+    "@nivo/tooltip": "^0.99.0",
     "@nivo/treemap": "^0.99.0",
-    "d3-format": "^3.1.2",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0"
   },
   "peerDependenciesMeta": {
     "@nivo/bar": {
+      "optional": true
+    },
+    "@nivo/tooltip": {
       "optional": true
     },
     "@nivo/bump": {
@@ -178,9 +181,6 @@
       "optional": true
     },
     "@nivo/treemap": {
-      "optional": true
-    },
-    "d3-format": {
       "optional": true
     },
     "d3-scale": {

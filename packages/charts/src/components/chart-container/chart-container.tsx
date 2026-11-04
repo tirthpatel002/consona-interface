@@ -6,7 +6,6 @@ import { createCompoundContext } from '@consona/interface-core'
 import { renderSlot } from '@consona/interface-core'
 import type { SlotComponents, SlotPropsMap, SlotDefinition } from '@consona/interface-core'
 import type { ChartTimeRange, ChartToolbarAction } from '../../types/common'
-import { useChartDimensions } from '../../hooks/use-chart-dimensions'
 import { useChartContext } from '../chart-context'
 
 /* ==========================================================================
@@ -112,7 +111,7 @@ export const ChartContainer = createInterfaceComponent<ChartContainerProps, Char
   {
     name: 'ChartContainer',
     category: 'data',
-    description: 'Concentric card container designed for hosting interactive SaaS visualizers and Nivo charts.',
+    description: 'Concentric card container designed for hosting interactive SaaS chart visualizers.',
     version: '1.0.0',
     props: {
       variant: 'default',
@@ -282,6 +281,7 @@ const ChartToolbarPrimitive = ({
               <button
                 key={range}
                 type="button"
+                aria-pressed={isSelected}
                 onClick={() => handleRangeClick(range)}
                 className={cn(
                   'px-2 py-0.5 text-2xs font-medium rounded-atom transition-all duration-150 cursor-pointer',
@@ -385,6 +385,8 @@ const ChartLegendPrimitive = ({
         <button
           key={item.id}
           type="button"
+          aria-pressed={!item.hidden}
+          aria-label={`${item.hidden ? 'Show' : 'Hide'} ${item.label}`}
           onClick={() => onToggleItem?.(item.id)}
           className={cn(
             'inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-micro transition-opacity hover:opacity-100 cursor-pointer',
@@ -815,8 +817,14 @@ export interface ChartCanvasProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   isLoading?: boolean
   /** Whether the chart dataset is empty. */
   isEmpty?: boolean
+  /** Whether the chart failed to render / load data. */
+  isError?: boolean
   /** Custom fallback message displayed during empty state. */
   emptyMessage?: string
+  /** Custom fallback message displayed during error state. */
+  errorMessage?: string
+  /** Accessible name for the chart canvas. */
+  'aria-label'?: string
   /** Whether tooltips stay visible and smooth during inter-item canvas motion (default: true). */
   persistTooltip?: boolean
   /** Canvas child content or render prop receiving chart context. */
@@ -830,13 +838,16 @@ const ChartCanvasPrimitive = ({
   aspectRatio: propAspectRatio,
   isLoading: propIsLoading,
   isEmpty: propIsEmpty,
+  isError: propIsError,
   emptyMessage = 'No data available to display.',
+  errorMessage = 'Unable to render chart.',
   persistTooltip = true,
   children,
   style,
   onPointerEnter,
   onPointerMove,
   onPointerLeave,
+  'aria-label': ariaLabelProp,
   ...props
 }: ChartCanvasProps) => {
   const ctx = useChartContext()
@@ -848,6 +859,8 @@ const ChartCanvasPrimitive = ({
   const height = propHeight ?? ctx.height ?? 360
   const isLoading = propIsLoading ?? ctx.isLoading ?? false
   const isEmpty = propIsEmpty ?? (ctx.data && Array.isArray(ctx.data) && ctx.data.length === 0)
+  const isError = propIsError ?? Boolean(ctx.meta?.error)
+  const ariaLabel = ariaLabelProp || (typeof ctx.meta?.title === 'string' ? ctx.meta.title : 'Chart')
 
   const visualizer = ctx.renderChart ? ctx.renderChart() : ctx.chartNode
   const nonTooltipChildren = (typeof children === 'function' ? [] : React.Children.toArray(children)).filter((child) => {
@@ -905,6 +918,9 @@ const ChartCanvasPrimitive = ({
     <div
       ref={setRefs}
       data-slot="chart-canvas"
+      role="img"
+      aria-label={ariaLabel}
+      aria-busy={isLoading || undefined}
       className={cn('w-full relative select-none', className)}
       style={{
         width: '100%',
@@ -918,10 +934,12 @@ const ChartCanvasPrimitive = ({
       onPointerLeave={handlePointerLeave}
       {...props}
     >
-      {isLoading ? (
-        <ChartLoadingState />
+      {isError ? (
+        resolvedContent ?? <ChartErrorState message={errorMessage} />
+      ) : isLoading ? (
+        resolvedContent ?? <ChartLoadingState />
       ) : isEmpty ? (
-        <ChartEmptyState message={emptyMessage} />
+        resolvedContent ?? <ChartEmptyState message={emptyMessage} />
       ) : (
         <>
           {resolvedContent}
@@ -983,6 +1001,41 @@ export const ChartEmptyState = createInterfaceComponent<ChartEmptyStateProps>(
     version: '1.0.0',
   },
   ChartEmptyStatePrimitive
+)
+
+export interface ChartErrorStateProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Custom error message. */
+  message?: string
+}
+
+const ChartErrorStatePrimitive = ({
+  className,
+  message = 'Unable to render chart.',
+  ...props
+}: ChartErrorStateProps) => {
+  return (
+    <div
+      data-slot="chart-error-state"
+      role="alert"
+      className={cn(
+        'w-full h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center text-danger border border-dashed border-danger/40 rounded-base bg-danger/5',
+        className
+      )}
+      {...props}
+    >
+      <p className="text-xs font-medium">{message}</p>
+    </div>
+  )
+}
+
+export const ChartErrorState = createInterfaceComponent<ChartErrorStateProps>(
+  {
+    name: 'ChartErrorState',
+    category: 'data',
+    description: 'Error state for failed chart renders or data load failures.',
+    version: '1.0.0',
+  },
+  ChartErrorStatePrimitive
 )
 
 export interface ChartLoadingStateProps extends React.HTMLAttributes<HTMLDivElement> { }
@@ -1089,6 +1142,7 @@ ChartContainer.Tooltip = ChartTooltip
 ChartContainer.Overlay = CanvasTooltipOverlay
 ChartContainer.Bridge = ChartTooltipBridge
 ChartContainer.Empty = ChartEmptyState
+ChartContainer.Error = ChartErrorState
 ChartContainer.Loading = ChartLoadingState
 ChartContainer.Footer = ChartFooter
 ChartContainer.ChartToolbar = ChartToolbar

@@ -1,7 +1,7 @@
 /**
  * @file gantt-bar.tsx
  * Interactive Gantt bar with move / resize, hover datetime labels, and dependency dots.
- * Edge-autoscroll (Elixir Timeline edgeThreshold) while moving/resizing or linking.
+ * Edge-autoscroll while moving/resizing or linking.
  * Dependency-dot drag: begin on pointerdown, track globally, rubber-band via
  * engine.dependencyLink (scrollLeft-aware), commit on pointerup over another record.
  */
@@ -164,7 +164,7 @@ const GanttBarPrimitive = ({
   const [hoverEdge, setHoverEdge] = useState<'start' | 'end' | 'body' | null>(null)
   // Sync flag so dots stay mounted for the gesture without waiting for engine→React.
   const [linkingSide, setLinkingSide] = useState<GanttDependencySide | null>(null)
-  // Tear down document listeners attached synchronously in startDot (Elixir-style).
+  // Tear down document listeners attached synchronously in startDot.
   const linkCleanupRef = useRef<(() => void) | null>(null)
 
   const id = gantt ? gantt.helpers.getId(item) : ''
@@ -197,10 +197,7 @@ const GanttBarPrimitive = ({
       if (!gantt) return { x: 0, y: 0 }
       const timelineEl = barRef.current?.closest('[data-slot="gantt-timeline"]') as HTMLElement | null
       const scroller = gantt.helpers.context.scrollerRef.current
-      // X: Fluenciq scroll-container formula (rail + scrollLeft).
-      // Y: content Y relative to timeline/SVG origin = scroller Y minus sticky header height.
-      // Using timeline.getBoundingClientRect alone can sit ~1 row low once the sticky
-      // header overlaps the scrolled body (rubber-band tip looked a row below the cursor).
+      // X: rail + scrollLeft content space. Y: scroller Y minus sticky header height.
       let x = 0
       let y = 0
       if (scroller) {
@@ -224,8 +221,16 @@ const GanttBarPrimitive = ({
     [gantt]
   )
 
+  // Keep a stable ref so drag listeners are not torn down every engine snapshot.
+  const ganttLiveRef = useRef(gantt)
+  ganttLiveRef.current = gantt
+  const itemRef = useRef(item)
+  itemRef.current = item
+
   useEffect(() => {
-    if (!gantt || !isDragging) return
+    if (!isDragging) return
+    const live = () => ganttLiveRef.current
+    if (!live()) return
 
     let lastX = 0
     let lastY = 0
@@ -240,20 +245,22 @@ const GanttBarPrimitive = ({
     }
 
     const applyDragFrame = () => {
-      if (!hasPointer) return
-      const scrollLeft = syncEdgeAutoScroll(gantt, lastX, lastY)
-      gantt.actions.updateDrag(lastX, scrollLeft)
+      const g = live()
+      if (!g || !hasPointer) return
+      const scrollLeft = syncEdgeAutoScroll(g, lastX, lastY)
+      g.actions.updateDrag(lastX, scrollLeft)
     }
 
     const loop = () => {
       rafId = 0
-      const scroller = gantt.helpers.context.scrollerRef.current
+      const g = live()
+      if (!g) return
+      const scroller = g.helpers.context.scrollerRef.current
       if (!scroller || !hasPointer) return
       if (!isNearScrollerEdge(scroller, lastX, lastY)) return
       const beforeLeft = scroller.scrollLeft
       const beforeTop = scroller.scrollTop
       applyDragFrame()
-      // Keep ticking only while scroll still moves (avoid spinning at bounds).
       if (scroller.scrollLeft !== beforeLeft || scroller.scrollTop !== beforeTop) {
         rafId = requestAnimationFrame(loop)
       }
@@ -264,19 +271,20 @@ const GanttBarPrimitive = ({
       lastY = e.clientY
       hasPointer = true
       applyDragFrame()
-      const scroller = gantt.helpers.context.scrollerRef.current
+      const g = live()
+      const scroller = g?.helpers.context.scrollerRef.current
       if (!rafId && scroller && isNearScrollerEdge(scroller, lastX, lastY)) {
         rafId = requestAnimationFrame(loop)
       }
     }
     const onUp = () => {
       stopLoop()
-      gantt.actions.endDrag(item)
+      live()?.actions.endDrag(itemRef.current)
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         stopLoop()
-        gantt.actions.cancelDrag()
+        live()?.actions.cancelDrag()
       }
     }
 
@@ -289,7 +297,7 @@ const GanttBarPrimitive = ({
       document.removeEventListener('pointerup', onUp)
       document.removeEventListener('keydown', onKey)
     }
-  }, [isDragging, gantt, item])
+  }, [isDragging])
 
   // Clear sync link flag if engine cancels externally.
   useEffect(() => {
@@ -363,12 +371,8 @@ const GanttBarPrimitive = ({
     e.currentTarget.setPointerCapture?.(e.pointerId)
   }
 
-  /**
-   * Fluenciq handleDragStart: stopPropagation so RecordBar move/resize cannot steal,
-   * setDraggingDot immediately, then track mousePosition on document every move.
-   */
+  /** Begin dependency-link drag from a connection dot (stopPropagation so bar drag cannot steal). */
   const startDot = (side: GanttDependencySide) => (e: React.PointerEvent) => {
-    // CRITICAL: stop bar move/resize from the same pointerdown (Elixir stopPropagation).
     e.preventDefault()
     e.stopPropagation()
     if (readOnly || e.button !== 0 || !gantt) return
@@ -451,22 +455,35 @@ const GanttBarPrimitive = ({
     const cleanup = () => {
       stopLoop()
       document.removeEventListener('pointermove', onMove)
-      document.removeEventListener('mousemove', onMove as EventListener)
       document.removeEventListener('pointerup', onUp)
-      document.removeEventListener('mouseup', onUp as EventListener)
       document.removeEventListener('keydown', onKey)
       linkCleanupRef.current = null
     }
 
     linkCleanupRef.current = cleanup
-    // Attach NOW (not in useEffect) so the first moves after mousedown are never dropped.
+    // Pointer events only — duplicate mouse listeners double-fired edge autoscroll.
     document.addEventListener('pointermove', onMove)
-    document.addEventListener('mousemove', onMove as EventListener)
     document.addEventListener('pointerup', onUp)
-    document.addEventListener('mouseup', onUp as EventListener)
     document.addEventListener('keydown', onKey)
 
     e.currentTarget.setPointerCapture?.(e.pointerId)
+  }
+
+  const nudgeBar = (deltaCells: number, edge: 'start' | 'end' | 'move') => {
+    if (readOnly || !gantt) return
+    const dx = deltaCells * gantt.state.cellWidth
+    const type = edge === 'move' ? 'move' : edge === 'start' ? 'resize-start' : 'resize-end'
+    gantt.actions.beginDrag({
+      itemId: id,
+      type,
+      clientX: 0,
+      left: layout.left,
+      width: layout.width,
+      startMs: layout.startMs,
+      endMs: layout.endMs,
+    })
+    gantt.actions.updateDrag(dx, gantt.state.scrollLeft)
+    gantt.actions.endDrag(item)
   }
 
   return (
@@ -477,8 +494,8 @@ const GanttBarPrimitive = ({
       role="gridcell"
       tabIndex={readOnly ? -1 : 0}
       aria-selected={isSelected}
-      aria-grabbed={isDragging}
-      aria-label={label}
+      aria-label={`${label}${readOnly ? '' : '. Use arrow keys to move, Shift+arrows to resize.'}`}
+      aria-roledescription={readOnly ? undefined : 'draggable timeline bar'}
       className={cn(
         'absolute top-1/2 flex h-7 -translate-y-1/2 cursor-grab items-center overflow-visible rounded-micro border border-border/50 bg-primary/25 text-fg shadow-xs',
         'active:cursor-grabbing',
@@ -497,12 +514,25 @@ const GanttBarPrimitive = ({
         ...style,
       }}
       onPointerDown={onPointerDown}
+      onKeyDown={(e) => {
+        if (readOnly) return
+        const step = e.shiftKey ? 0.25 : 1
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          nudgeBar(e.altKey ? -step : -step, e.altKey ? 'start' : 'move')
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          nudgeBar(e.altKey ? step : step, e.altKey ? 'end' : 'move')
+        } else if (e.key === 'Escape' && isDragging) {
+          e.preventDefault()
+          gantt.actions.cancelDrag()
+        }
+      }}
       onMouseEnter={() => {
         gantt.actions.hover(id)
         setHoverEdge((prev) => prev ?? 'body')
       }}
       onMouseLeave={() => {
-        // Prefer engine snapshot — React state can lag one frame behind beginDependencyLink.
         if (!gantt.helpers.context.engine.getState().dependencyLink && linkingSide == null) {
           gantt.actions.hover(null)
         }
@@ -516,14 +546,20 @@ const GanttBarPrimitive = ({
           <span
             data-slot="gantt-bar-resize-start"
             className="absolute inset-y-0 left-0 z-[1] w-2 cursor-col-resize"
-            aria-hidden
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={`Resize start of ${label}`}
+            tabIndex={-1}
             onMouseEnter={() => setHoverEdge('start')}
             onMouseLeave={() => setHoverEdge((e) => (e === 'start' ? 'body' : e))}
           />
           <span
             data-slot="gantt-bar-resize-end"
             className="absolute inset-y-0 right-0 z-[1] w-2 cursor-col-resize"
-            aria-hidden
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={`Resize end of ${label}`}
+            tabIndex={-1}
             onMouseEnter={() => setHoverEdge('end')}
             onMouseLeave={() => setHoverEdge((e) => (e === 'end' ? 'body' : e))}
           />
@@ -612,7 +648,7 @@ export const GanttBar = createInterfaceComponent<GanttBarProps, GanttBarSlots>(
     category: 'data',
     description:
       'Interactive Gantt bar supporting snap move/resize with edge autoscroll, hover datetime labels, and dependency connection dots.',
-    version: '1.5.0',
+    version: '1.0.0',
     props: {
       resizeHandleWidth: 8,
       disabled: false,

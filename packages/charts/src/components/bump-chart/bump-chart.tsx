@@ -26,6 +26,8 @@ import {
 import { ChartContext, ChartProvider, useChartContext } from '../chart-context'
 import { useChartTheme } from '../../hooks/use-chart-theme'
 import { useChartDimensions } from '../../hooks/use-chart-dimensions'
+import { useChartMotion } from '../../hooks/use-chart-motion'
+import { findTooltipElement, shouldRenderHeadlessChart } from '../../utils/chart-children'
 import type {
   ChartContainerVariant,
   ChartMargin,
@@ -120,26 +122,6 @@ export interface BumpChartProps extends Omit<React.HTMLAttributes<HTMLDivElement
    Bump Chart Primitive
    ========================================================================== */
 
-function findTooltipElement(node: React.ReactNode): React.ReactElement | null {
-  if (!node) return null
-  for (const child of React.Children.toArray(node)) {
-    if (React.isValidElement(child)) {
-      if (
-        child.type === ChartTooltip ||
-        (child.type as any)?.displayName === 'ChartTooltip' ||
-        (child.type as any)?.name === 'ChartTooltip' ||
-        (child.props as any)?.['data-slot'] === 'chart-tooltip'
-      ) {
-        return child
-      }
-      if ((child.props as any)?.children) {
-        const found = findTooltipElement((child.props as any).children)
-        if (found) return found
-      }
-    }
-  }
-  return null
-}
 
 function BumpChartPrimitive({
   data = [],
@@ -170,6 +152,7 @@ function BumpChartPrimitive({
 }: BumpChartProps) {
   const { theme, colors } = useChartTheme({ palette })
   const { ref, width, isReady } = useChartDimensions({ height, aspectRatio })
+  const motionProps = useChartMotion()
   const safeData = React.useMemo(() => {
     if (!Array.isArray(data)) return []
     return data
@@ -426,6 +409,7 @@ function BumpChartPrimitive({
       tickPadding: 5,
       tickRotation: 0,
     },
+    ...motionProps,
     ...chartProps,
     ...nivoProps,
     ...(slotProps?.chart as any),
@@ -460,7 +444,7 @@ function BumpChartPrimitive({
     chartNode: visualizerNode,
   }
 
-  if (children != null) {
+  if (shouldRenderHeadlessChart(children)) {
     return (
       <ChartProvider value={contextValue}>
         {children}

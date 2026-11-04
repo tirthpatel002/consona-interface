@@ -127,7 +127,7 @@ export const GanttRow = createInterfaceComponent<GanttRowProps, GanttRowSlots>(
     category: 'data',
     description:
       'Single Gantt row hosting an optional sticky label, a timeline track with a bar, and optional overflow edge chips (gated off when the expanded title rail is visible — the rail shows its own overflow arrows; chips take over when the rail is collapsed or hidden).',
-    version: '1.2.0',
+    version: '1.0.0',
     props: {
       showLabel: false,
       // showEdgeChips defaults from Gantt context (off with rail)

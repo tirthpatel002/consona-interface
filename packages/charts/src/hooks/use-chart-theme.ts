@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { createNivoTheme } from '../theme/chart-theme'
+import { createChartTheme } from '../theme/chart-theme'
 import { resolveChartPalette } from '../theme/color-palettes'
 
 export interface UseChartThemeOptions {
@@ -9,14 +9,14 @@ export interface UseChartThemeOptions {
 }
 
 /**
- * Hook to dynamically compute Nivo-compliant themes and color palettes
+ * Hook to dynamically compute chart themes and color palettes
  * synced with Consona Interface styles.
  */
 export function useChartTheme(options: UseChartThemeOptions = {}) {
   const { palette, themeOverrides, isDark } = options
 
   const theme = useMemo(() => {
-    const baseTheme = createNivoTheme({ isDark })
+    const baseTheme = createChartTheme({ isDark })
     if (!themeOverrides) return baseTheme
     return {
       ...baseTheme,

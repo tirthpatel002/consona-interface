@@ -1435,14 +1435,21 @@ export function parseCueIdentifier(identifier: string): { cue: string; variant?:
 }
 
 /**
- * Checks if a string is a recognized sound cue.
+ * Checks if a string is a recognized sound cue (built-in palette and optional custom registry).
  */
-export function isSoundCue(value: unknown): boolean {
+export function isSoundCue(
+  value: unknown,
+  customRegistry?: Record<string, SoundCueDefinition>
+): boolean {
   if (typeof value !== 'string') return false
   const { cue } = parseCueIdentifier(value)
   const aliasResolved = SOUND_ALIASES[cue] ?? cue
   const { cue: canonicalCue } = parseCueIdentifier(aliasResolved)
-  return SOUND_REGISTRY[canonicalCue] !== undefined || SOUND_REGISTRY[cue] !== undefined
+  if (SOUND_REGISTRY[canonicalCue] !== undefined || SOUND_REGISTRY[cue] !== undefined) {
+    return true
+  }
+  if (!customRegistry) return false
+  return customRegistry[canonicalCue] !== undefined || customRegistry[cue] !== undefined
 }
 
 /**
@@ -1577,8 +1584,31 @@ export function adaptRecipe(
         sustain: Math.min(1.0, layer.sustain * gainMultiplier),
       }
     } else if (layer.kind === 'pulse-loop') {
+      const pulseList = Array.isArray(layer.pulse) ? layer.pulse : [layer.pulse]
+      const adaptedPulses = pulseList.map((pulse) => {
+        if (pulse.kind === 'tone') {
+          return {
+            ...pulse,
+            frequency: pulse.frequency * freqMultiplier,
+            detune: (pulse.detune ?? 0) + microDetune,
+            glideTo: pulse.glideTo ? pulse.glideTo * freqMultiplier : undefined,
+            attack: Math.max(0.0005, pulse.attack),
+            decay: Math.max(0.005, pulse.decay * decayMultiplier),
+            peak: Math.min(1.0, pulse.peak * gainMultiplier),
+          }
+        }
+        return {
+          ...pulse,
+          filterFrequency: Math.max(100, Math.min(18000, pulse.filterFrequency * freqMultiplier)),
+          attack: Math.max(0.0005, pulse.attack),
+          decay: Math.max(0.005, pulse.decay * decayMultiplier),
+          peak: Math.min(1.0, pulse.peak * gainMultiplier),
+        }
+      })
       return {
         ...layer,
+        pulse: Array.isArray(layer.pulse) ? adaptedPulses : adaptedPulses[0]!,
+        interval: Math.max(0.02, layer.interval / (emphasis === 'strong' ? 1.15 : emphasis === 'subtle' ? 0.9 : 1)),
       }
     }
     return layer

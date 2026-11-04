@@ -1,8 +1,7 @@
 /**
  * @file gantt-create-strip.tsx
  * Sticky bottom create strip with ghost preview; click emits onCreate({ start, end }).
- * Ghost tracks pointer X in timeline content space (scrollLeft-aware), like Fluenciq
- * FloatingBox / newRecordPreviewPosition.
+ * Ghost tracks pointer X in timeline content space (scrollLeft-aware).
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -28,9 +27,7 @@ const GanttCreateStripPrimitive = ({ className, ...props }: GanttCreateStripProp
 
   /**
    * Timeline content X under the pointer.
-   * Fluenciq: `clientX - rect.left + scrollLeft` on the scroll container (not the sticky strip).
-   * Sticky strip getBoundingClientRect().left can sit at the viewport edge while abspos
-   * children still use content coordinates — that mismatch pinned the ghost at timeline start.
+   * Prefer the scroller formula (`clientX - rect.left + scrollLeft`) over the sticky strip box.
    */
   const pointerToTimelineX = useCallback(
     (clientX: number, clientY: number) => {
@@ -74,12 +71,12 @@ const GanttCreateStripPrimitive = ({ className, ...props }: GanttCreateStripProp
     setGhost(null)
   }, [])
 
-  // Document-level mousemove while hovering — mirrors Fluenciq FloatingBox so the ghost
-  // updates every move even if a child/overlay eats strip-local events.
+  // Document-level pointermove only while the strip is hovered — avoids a permanent listener.
+  const [isHovering, setIsHovering] = useState(false)
   useEffect(() => {
-    if (!gantt) return
+    if (!gantt || !isHovering) return
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
       if (!hoveringRef.current) return
       const el = trackRef.current
       if (!el) return
@@ -87,22 +84,21 @@ const GanttCreateStripPrimitive = ({ className, ...props }: GanttCreateStripProp
       const scroller = gantt.helpers.context.scrollerRef.current
       const sRect = scroller?.getBoundingClientRect()
       const rail = gantt.helpers.context.railWidthPx
-      // Intersect strip box with the visible scroller (sticky + wide timeline can make
-      // getBoundingClientRect span far off-screen).
       const left = sRect ? Math.max(rect.left, sRect.left + rail) : rect.left
       const right = sRect ? Math.min(rect.right, sRect.right) : rect.right
       const top = sRect ? Math.max(rect.top, sRect.top) : rect.top
       const bottom = sRect ? Math.min(rect.bottom, sRect.bottom) : rect.bottom
       if (e.clientX < left || e.clientX > right || e.clientY < top || e.clientY > bottom) {
         clearGhost()
+        setIsHovering(false)
         return
       }
       updateGhost(e.clientX, e.clientY)
     }
 
-    document.addEventListener('mousemove', onMove)
-    return () => document.removeEventListener('mousemove', onMove)
-  }, [gantt, updateGhost, clearGhost])
+    document.addEventListener('pointermove', onMove)
+    return () => document.removeEventListener('pointermove', onMove)
+  }, [gantt, isHovering, updateGhost, clearGhost])
 
   const onClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -139,13 +135,18 @@ const GanttCreateStripPrimitive = ({ className, ...props }: GanttCreateStripProp
       }}
       onMouseEnter={(e) => {
         hoveringRef.current = true
+        setIsHovering(true)
         updateGhost(e.clientX, e.clientY)
       }}
       onMouseMove={(e) => {
         hoveringRef.current = true
+        setIsHovering(true)
         updateGhost(e.clientX, e.clientY)
       }}
-      onMouseLeave={clearGhost}
+      onMouseLeave={() => {
+        clearGhost()
+        setIsHovering(false)
+      }}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -165,7 +166,6 @@ const GanttCreateStripPrimitive = ({ className, ...props }: GanttCreateStripProp
       )}
       {ghost && (
         <>
-          {/* Centered on cursor like Fluenciq FloatingBox (translate -50% on content X). */}
           <div
             data-slot="gantt-create-ghost"
             className="pointer-events-none absolute top-1/2 z-[1] h-5 -translate-y-1/2 rounded-micro border-0 bg-primary/20"
@@ -198,7 +198,7 @@ export const GanttCreateStrip = createInterfaceComponent<
     category: 'data',
     description:
       'Sticky bottom create strip with ghost preview; click emits onCreate with a range derived from viewRange cell size.',
-    version: '1.2.0',
+    version: '1.0.0',
     props: {},
     slots: {},
   },

@@ -3,15 +3,7 @@ import {
   createBrowserLocalStorageAdapter as createLocalStorageAdapter,
   createPrefixStorageAdapter,
 } from '@consona/interface-core'
-import {
-  getActiveContinuousCues,
-  getActiveVoicesCount,
-  resumeSoundContext,
-  stopAllContinuousVoices,
-  stopContinuousByCue,
-  synthesizeContinuous,
-  synthesizeRecipe,
-} from './audio-graph'
+import { createSoundAudioGraph, type SoundAudioGraph } from './audio-graph'
 import { bindDeclarativeSounds } from './bind'
 import {
   ALL_SOUND_NAMES,
@@ -27,11 +19,26 @@ import type {
   SoundCueDefinition,
   SoundEngineOptions,
   SoundHandle,
-  SoundName,
   SoundPlayOptions,
   SoundRecipe,
   SoundState,
 } from './types'
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
+}
+
+function cloneCueDefinition(def: SoundCueDefinition): SoundCueDefinition {
+  return {
+    default: def.default,
+    variants: def.variants ? { ...def.variants } : undefined,
+  }
+}
 
 /**
  * Pure TypeScript SoundEngine orchestrating Web Audio interaction sound synthesis,
@@ -41,16 +48,20 @@ export class SoundEngine extends BaseEngine<SoundState> {
   private customRegistry: Map<string, SoundCueDefinition> = new Map()
   private continuousHandles: Map<string, SoundHandle> = new Map()
   private cleanupBinding?: () => void
+  private extraBindings = new Set<() => void>()
+  private graph: SoundAudioGraph
+  private respectReducedMotion: boolean
 
   constructor(options: SoundEngineOptions = {}) {
     const {
       defaultVolume = 0.7,
       defaultEnabled = true,
       defaultMuted = false,
-      storageAdapter = createLocalStorageAdapter(),
+      storageAdapter,
       storageKey = 'config',
       customRecipes = {},
       autoBind = true,
+      respectReducedMotion = true,
     } = options
 
     super({
@@ -62,16 +73,20 @@ export class SoundEngine extends BaseEngine<SoundState> {
       activeContinuousCues: [],
     })
 
-    // 1. Initialize custom recipes
+    this.respectReducedMotion = respectReducedMotion
+    this.graph = createSoundAudioGraph({
+      getMasterVolume: () => this.state.volume,
+    })
+
     Object.entries(customRecipes).forEach(([cue, defOrRecipe]) => {
-      if ('default' in defOrRecipe) {
-        this.customRegistry.set(cue, defOrRecipe as SoundCueDefinition)
+      if (defOrRecipe && typeof defOrRecipe === 'object' && 'default' in defOrRecipe) {
+        this.customRegistry.set(cue, cloneCueDefinition(defOrRecipe as SoundCueDefinition))
       } else {
         this.customRegistry.set(cue, { default: defOrRecipe as SoundRecipe })
       }
     })
 
-    // 2. Attach persistent storage binding (Rule ENG2)
+    // Opt-in persistence: only when a storage adapter is provided.
     if (storageAdapter) {
       const prefixAdapter = createPrefixStorageAdapter('consona:sound:', storageAdapter)
       this.attachStorage({
@@ -89,10 +104,21 @@ export class SoundEngine extends BaseEngine<SoundState> {
       })
     }
 
-    // 3. Auto-bind declarative DOM listeners if enabled
     if (autoBind && typeof document !== 'undefined') {
       this.cleanupBinding = bindDeclarativeSounds(this)
     }
+  }
+
+  private customRegistryRecord(): Record<string, SoundCueDefinition> {
+    return Object.fromEntries(this.customRegistry)
+  }
+
+  private shouldSuppressPlayback(): boolean {
+    return this.respectReducedMotion && prefersReducedMotion()
+  }
+
+  private resolveCue(cue: string): boolean {
+    return isSoundCue(cue, this.customRegistryRecord())
   }
 
   /**
@@ -100,82 +126,82 @@ export class SoundEngine extends BaseEngine<SoundState> {
    */
   public play = (cue: string = 'tap', options?: SoundPlayOptions): void => {
     if (!this.state.enabled || this.state.isMuted) return
-    if (!isSoundCue(cue)) return
+    if (this.shouldSuppressPlayback()) return
+    if (!this.resolveCue(cue)) return
 
     const { cue: parsedCue, variant: parsedVariant } = parseCueIdentifier(cue)
     const effectiveVariant = options?.variant ?? parsedVariant
+    const custom = this.customRegistryRecord()
 
     const recipe =
-      getSoundRecipe(parsedCue, effectiveVariant, Object.fromEntries(this.customRegistry)) ??
+      getSoundRecipe(parsedCue, effectiveVariant, custom) ??
       getSoundRecipe(parsedCue, effectiveVariant)
 
     if (!recipe) return
 
     const emphasis = options?.emphasis ?? 'normal'
-    const playVolume = Math.max(0, Math.min(1, this.state.volume * (options?.volume ?? 1)))
-
-    if (playVolume <= 0) return
+    const instanceVolume = Math.max(0, Math.min(1, options?.volume ?? 1))
+    if (instanceVolume <= 0 || this.state.volume <= 0) return
 
     const adapted = adaptRecipe(recipe, emphasis, options?.context)
+    const playVolume = this.state.volume * instanceVolume
 
-    const success = synthesizeRecipe(adapted, playVolume, (voiceCount) => {
-      this.syncActiveVoices(voiceCount)
-    })
-
-    if (success) {
-      const lastPlayed = {
-        cue: parsedCue,
-        variant: effectiveVariant,
-        emphasis,
-        volume: playVolume,
-        timestamp: Date.now(),
-      }
-
-      this.setState({ lastPlayed })
-      this.emit('sound:play', lastPlayed)
-    }
+    this.graph.synthesizeRecipe(
+      adapted,
+      instanceVolume,
+      (voiceCount) => {
+        this.syncActiveVoices(voiceCount)
+      },
+      () => {
+        const lastPlayed = {
+          cue: parsedCue,
+          variant: effectiveVariant,
+          emphasis,
+          volume: playVolume,
+          timestamp: Date.now(),
+        }
+        this.setState({ lastPlayed })
+        this.emit('sound:play', lastPlayed)
+      },
+      options?.pan
+    )
   }
 
   /**
    * Starts a continuous / infinite / sustained audio loop that plays indefinitely
    * until stopped or until the optional TTL duration expires.
-   *
-   * @param cue Sound cue name (e.g. 'loading-hum', 'radar-pulse', 'beam-laser', 'focus-noise').
-   * @param options Optional configuration including TTL, custom release fade-out, volume, and variant.
-   * @returns A SoundHandle with `.stop()` and `.setVolume()` methods, or null if audio is disabled.
    */
   public start = (
     cue: string = 'loading-hum',
     options?: SoundContinuousOptions
   ): SoundHandle | null => {
     if (!this.state.enabled || this.state.isMuted) return null
-    if (!isSoundCue(cue)) return null
+    if (this.shouldSuppressPlayback()) return null
+    if (!this.resolveCue(cue)) return null
 
     const { cue: parsedCue, variant: parsedVariant } = parseCueIdentifier(cue)
     const effectiveVariant = options?.variant ?? parsedVariant
+    const custom = this.customRegistryRecord()
 
-    // Stop existing instance of this continuous cue so variants don't stack/clash
     this.stop(parsedCue, 0.06)
 
     const recipe =
-      getSoundRecipe(parsedCue, effectiveVariant, Object.fromEntries(this.customRegistry)) ??
+      getSoundRecipe(parsedCue, effectiveVariant, custom) ??
       getSoundRecipe(parsedCue, effectiveVariant)
 
     if (!recipe) return null
 
     const emphasis = options?.emphasis ?? 'normal'
-    const playVolume = Math.max(0, Math.min(1, this.state.volume * (options?.volume ?? 1)))
-
-    if (playVolume <= 0) return null
+    const instanceVolume = Math.max(0, Math.min(1, options?.volume ?? 1))
+    if (instanceVolume <= 0 || this.state.volume <= 0) return null
 
     const adapted = adaptRecipe(recipe, emphasis, options?.context)
-
     const originalOnEnded = options?.onEnded
 
-    const handle = synthesizeContinuous(
+    const handle = this.graph.synthesizeContinuous(
       parsedCue,
       adapted,
-      playVolume,
+      instanceVolume,
       {
         ...options,
         variant: effectiveVariant,
@@ -183,7 +209,11 @@ export class SoundEngine extends BaseEngine<SoundState> {
           this.continuousHandles.delete(handle?.id ?? '')
           this.syncActiveContinuous()
           originalOnEnded?.()
-          this.emit('sound:continuousStop', { id: handle?.id ?? '', cue: parsedCue, timestamp: Date.now() })
+          this.emit('sound:continuousStop', {
+            id: handle?.id ?? '',
+            cue: parsedCue,
+            timestamp: Date.now(),
+          })
         },
       },
       (voiceCount) => {
@@ -199,7 +229,7 @@ export class SoundEngine extends BaseEngine<SoundState> {
         id: handle.id,
         cue: parsedCue,
         variant: effectiveVariant,
-        volume: playVolume,
+        volume: this.state.volume * instanceVolume,
         ttl: options?.ttl,
         timestamp: Date.now(),
       })
@@ -208,9 +238,7 @@ export class SoundEngine extends BaseEngine<SoundState> {
     return handle
   }
 
-  /**
-   * Alias for start() method to trigger a continuous loop.
-   */
+  /** Alias for start(). */
   public playLoop = (
     cue: string = 'loading-hum',
     options?: SoundContinuousOptions
@@ -218,12 +246,6 @@ export class SoundEngine extends BaseEngine<SoundState> {
     return this.start(cue, options)
   }
 
-  /**
-   * Stops a continuous sound voice by handle reference, cue name, or voice ID.
-   *
-   * @param cueOrHandle Optional SoundHandle instance or cue name to stop.
-   * @param releaseDuration Optional custom fade-out duration in seconds.
-   */
   public stop = (cueOrHandle?: string | SoundHandle, releaseDuration?: number): void => {
     if (!cueOrHandle) {
       this.stopAll(releaseDuration)
@@ -245,26 +267,20 @@ export class SoundEngine extends BaseEngine<SoundState> {
           this.continuousHandles.delete(id)
         }
       }
-      stopContinuousByCue(parsedCue, releaseDuration)
+      this.graph.stopContinuousByCue(parsedCue, releaseDuration)
       this.syncActiveContinuous()
     }
   }
 
-  /**
-   * Stops all currently playing continuous audio voices gracefully with release fade-out.
-   */
   public stopAll = (releaseDuration?: number): void => {
     for (const handle of this.continuousHandles.values()) {
       handle.stop(releaseDuration)
     }
     this.continuousHandles.clear()
-    stopAllContinuousVoices(releaseDuration)
+    this.graph.stopAllContinuousVoices(releaseDuration)
     this.syncActiveContinuous()
   }
 
-  /**
-   * Returns whether a continuous cue or voice is currently synthesizing.
-   */
   public isContinuousPlaying = (cue: string, variant?: string): boolean => {
     const { cue: parsedCue, variant: parsedVariant } = parseCueIdentifier(cue)
     const targetVariant = variant ?? parsedVariant
@@ -279,34 +295,25 @@ export class SoundEngine extends BaseEngine<SoundState> {
     return false
   }
 
-
   private syncActiveVoices = (voiceCount: number): void => {
     this.setState({ activeVoicesCount: voiceCount })
   }
 
   private syncActiveContinuous = (): void => {
-    const activeCues = getActiveContinuousCues()
+    const activeCues = this.graph.getActiveContinuousCues()
     this.setState({
       activeContinuousCount: activeCues.length,
       activeContinuousCues: activeCues,
     })
   }
 
-  /**
-   * Sets the global master volume multiplier (0.0 to 1.0).
-   */
   public setVolume = (volume: number): void => {
     const clamped = Math.max(0, Math.min(1, Number.isFinite(volume) ? volume : 1))
     this.setState({ volume: clamped })
-    for (const handle of this.continuousHandles.values()) {
-      handle.setVolume(clamped)
-    }
+    this.graph.updateMasterVolume(clamped)
     this.emit('sound:volumeChange', { volume: clamped, isMuted: this.state.isMuted })
   }
 
-  /**
-   * Enables or disables sound synthesis globally.
-   */
   public setEnabled = (enabled: boolean): void => {
     const isEnabled = Boolean(enabled)
     this.setState({ enabled: isEnabled })
@@ -316,9 +323,6 @@ export class SoundEngine extends BaseEngine<SoundState> {
     this.emit('sound:stateChange', { enabled: isEnabled })
   }
 
-  /**
-   * Mutes or unmutes sound playback without changing the stored volume level.
-   */
   public setMuted = (isMuted: boolean): void => {
     const muted = Boolean(isMuted)
     this.setState({ isMuted: muted })
@@ -328,75 +332,77 @@ export class SoundEngine extends BaseEngine<SoundState> {
     this.emit('sound:volumeChange', { volume: this.state.volume, isMuted: muted })
   }
 
-  /**
-   * Toggles mute state on/off.
-   */
   public toggleMute = (): void => {
     this.setMuted(!this.state.isMuted)
   }
 
   /**
-   * Registers or overrides a sound recipe or variant.
+   * Registers or overrides a sound recipe or variant without mutating the built-in palette.
    */
   public registerRecipe = (cue: string, recipe: SoundRecipe, variant?: string): void => {
-    const existing = this.customRegistry.get(cue) ?? SOUND_REGISTRY[cue] ?? { default: recipe }
+    const existingCustom = this.customRegistry.get(cue)
+    const base = existingCustom
+      ? cloneCueDefinition(existingCustom)
+      : SOUND_REGISTRY[cue]
+        ? cloneCueDefinition(SOUND_REGISTRY[cue])
+        : { default: recipe }
+
     if (variant) {
-      existing.variants = { ...existing.variants, [variant]: recipe }
+      base.variants = { ...base.variants, [variant]: recipe }
     } else {
-      existing.default = recipe
+      base.default = recipe
     }
-    this.customRegistry.set(cue, existing)
+    this.customRegistry.set(cue, base)
   }
 
-  /**
-   * Registers a full sound cue definition with default recipe and variants.
-   */
   public registerCue = (cue: string, definition: SoundCueDefinition): void => {
-    this.customRegistry.set(cue, { ...definition })
+    this.customRegistry.set(cue, cloneCueDefinition(definition))
   }
 
-  /**
-   * Returns list of all available sound cue names.
-   */
   public getAvailableCues = (): readonly string[] => {
     return Array.from(new Set([...ALL_SOUND_NAMES, ...this.customRegistry.keys()]))
   }
 
-  /**
-   * Returns available variants for a specific cue.
-   */
   public getVariants = (cue: string): string[] => {
-    return getCueVariants(cue, Object.fromEntries(this.customRegistry))
+    return getCueVariants(cue, this.customRegistryRecord())
   }
 
-  /**
-   * Resumes underlying Web Audio context on user interaction.
-   */
   public resumeAudio = (): Promise<void> => {
-    return resumeSoundContext()
+    return this.graph.resume()
   }
 
-  /**
-   * Wires up declarative data-sound-* interaction bindings to a given root element.
-   */
   public bind = (root?: ParentNode): (() => void) => {
-    return bindDeclarativeSounds(this, root)
+    const unbind = bindDeclarativeSounds(this, root)
+    this.extraBindings.add(unbind)
+    return () => {
+      unbind()
+      this.extraBindings.delete(unbind)
+    }
   }
 
-  /**
-   * Cleans up all listeners, storage bindings, continuous voices, and DOM delegated listeners.
-   */
   public override destroy(): void {
     this.stopAll(0.02)
-    super.destroy()
     this.cleanupBinding?.()
+    this.cleanupBinding = undefined
+    for (const unbind of this.extraBindings) {
+      try {
+        unbind()
+      } catch {
+        /* ignore */
+      }
+    }
+    this.extraBindings.clear()
+    this.graph.destroy()
+    super.destroy()
   }
 }
 
 /**
  * Factory for creating a SoundEngine instance.
+ * Pass `storageAdapter` (e.g. `createLocalStorageAdapter()`) to persist preferences.
  */
 export function createSoundEngine(options: SoundEngineOptions = {}): SoundEngine {
   return new SoundEngine(options)
 }
 
+export { createLocalStorageAdapter }

@@ -12,7 +12,7 @@ export interface UseContinuousSoundOptions {
   cue?: SoundName
   /** Sound variant identifier. */
   variant?: string
-  /** Sound emphasis dynamic level. */
+  /** Sound dynamic emphasis level. */
   emphasis?: SoundEmphasis
   /** Volume level multiplier (0.0 to 1.0). */
   volume?: number
@@ -91,48 +91,68 @@ export function useContinuousSound(
     onStop,
   } = options
 
-  const { start: engineStart, stop: engineStop, activeContinuousCount, enabled, isMuted } = useSound()
+  const { start: engineStart, stop: engineStop, activeContinuousCount, enabled, isMuted } =
+    useSound()
   const [isPlaying, setIsPlaying] = useState(false)
   const [voiceId, setVoiceId] = useState<string | undefined>(undefined)
   const handleRef = useRef<SoundHandle | null>(null)
+  const stoppedLocallyRef = useRef(false)
+  const onStartRef = useRef(onStart)
+  const onStopRef = useRef(onStop)
+  onStartRef.current = onStart
+  onStopRef.current = onStop
+
+  const optionsRef = useRef({ cue, variant, emphasis, volume, ttl, release, disabled })
+  optionsRef.current = { cue, variant, emphasis, volume, ttl, release, disabled }
 
   const stop = useCallback(
     (releaseDuration?: number) => {
+      const wasPlaying = Boolean(handleRef.current) || isPlaying
+      stoppedLocallyRef.current = true
       if (handleRef.current) {
-        handleRef.current.stop(releaseDuration ?? release)
+        handleRef.current.stop(releaseDuration ?? optionsRef.current.release)
         handleRef.current = null
       } else {
-        engineStop(cue, releaseDuration ?? release)
+        engineStop(optionsRef.current.cue, releaseDuration ?? optionsRef.current.release)
       }
       setIsPlaying(false)
       setVoiceId(undefined)
-      onStop?.()
+      if (wasPlaying) {
+        onStopRef.current?.()
+      }
     },
-    [engineStop, cue, release, onStop]
+    [engineStop, isPlaying]
   )
 
   const start = useCallback(
     (overrideOptions?: SoundContinuousOptions): SoundHandle | null => {
-      if (disabled || !enabled || isMuted) return null
+      const opts = optionsRef.current
+      if (opts.disabled || !enabled || isMuted) return null
 
-      // If already playing, stop previous instance first
+      stoppedLocallyRef.current = false
+
       if (handleRef.current) {
         handleRef.current.stop(0.05)
+        handleRef.current = null
       }
 
-      const handle = engineStart(cue, {
-        variant,
-        emphasis,
-        volume,
-        ttl,
-        release,
+      const handle = engineStart(opts.cue, {
+        variant: opts.variant,
+        emphasis: opts.emphasis,
+        volume: opts.volume,
+        ttl: opts.ttl,
+        release: opts.release,
         ...overrideOptions,
         onEnded: () => {
+          handleRef.current = null
           setIsPlaying(false)
           setVoiceId(undefined)
-          handleRef.current = null
           overrideOptions?.onEnded?.()
-          onStop?.()
+          // Avoid double onStop when stop() already notified.
+          if (!stoppedLocallyRef.current) {
+            onStopRef.current?.()
+          }
+          stoppedLocallyRef.current = false
         },
       })
 
@@ -140,16 +160,16 @@ export function useContinuousSound(
         handleRef.current = handle
         setIsPlaying(true)
         setVoiceId(handle.id)
-        onStart?.()
+        onStartRef.current?.()
       }
 
       return handle
     },
-    [disabled, enabled, isMuted, engineStart, cue, variant, emphasis, volume, ttl, release, onStart, onStop]
+    [enabled, isMuted, engineStart]
   )
 
   const toggle = useCallback(() => {
-    if (isPlaying) {
+    if (handleRef.current?.isPlaying || isPlaying) {
       stop()
     } else {
       start()
@@ -160,18 +180,20 @@ export function useContinuousSound(
     handleRef.current?.setVolume(vol)
   }, [])
 
-  // Auto-start on mount if requested
+  // Auto-start once on mount; do not restart when `start` identity changes.
   useEffect(() => {
     if (autoStart && !disabled) {
       start()
     }
     return () => {
       if (handleRef.current) {
+        stoppedLocallyRef.current = true
         handleRef.current.stop(0.04)
         handleRef.current = null
       }
     }
-  }, [autoStart, disabled, start])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount/unmount only for autoStart lifecycle
+  }, [autoStart, disabled])
 
   const isReady = enabled && !isMuted && !disabled
 
@@ -204,4 +226,3 @@ export function useContinuousSound(
     [isPlaying, cue, variant, voiceId, activeContinuousCount, start, stop, toggle, setVolume, isReady]
   )
 }
-

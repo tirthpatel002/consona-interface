@@ -1,5 +1,4 @@
 import React, { useCallback, useContext } from 'react'
-import { useTooltip as useNivoTooltip } from '@nivo/tooltip'
 import {
   ChartTooltipStoreContext,
   defaultChartTooltipStore,
@@ -43,8 +42,8 @@ export interface ChartTooltipHandlers {
 }
 
 /**
- * Hook providing direct, non-flickering access to the underlying chart tooltip engine.
- * Eliminates remounting between items and maintains continuous presence within the canvas viewport.
+ * Hook providing direct, non-flickering access to the chart tooltip store.
+ * Uses Consona's canvas tooltip overlay — does not require `@nivo/tooltip`.
  */
 export function useChartTooltip(): ChartTooltipHandlers {
   const chartContext = useChartContext()
@@ -52,58 +51,37 @@ export function useChartTooltip(): ChartTooltipHandlers {
   const activeStore: TooltipStore = chartContext.tooltipStore || contextStore || defaultChartTooltipStore
   const tooltipState = useTooltipStoreState(activeStore)
 
-  let nivoTooltip: ReturnType<typeof useNivoTooltip> | null = null
-  try {
-    nivoTooltip = useNivoTooltip()
-  } catch {
-    nivoTooltip = null
-  }
-
   const showTooltip = useCallback(
     (
       content: React.ReactNode,
       options: { event?: any; position?: [number, number]; anchor?: TooltipAnchor | string; datum?: any } = {}
     ) => {
       activeStore.showTooltip(content, options)
-
-      // Sync with Nivo tooltip context if active
-      if (options.position) {
-        nivoTooltip?.showTooltipAt(content as any, options.position, options.anchor as any)
-      } else if (options.event) {
-        nivoTooltip?.showTooltipFromEvent(content as any, options.event)
-      }
     },
-    [activeStore, nivoTooltip]
+    [activeStore]
   )
 
   const showTooltipFromEvent = useCallback(
     (content: React.ReactNode, event: React.MouseEvent | React.TouchEvent | any, options: { anchor?: TooltipAnchor | string; datum?: any } = {}) => {
       activeStore.showTooltipFromEvent(content, event, options)
-      nivoTooltip?.showTooltipFromEvent(content as any, event)
     },
-    [activeStore, nivoTooltip]
+    [activeStore]
   )
 
   const showTooltipAt = useCallback(
     (content: React.ReactNode, position: [number, number], anchor: string = 'top', datum?: any) => {
       activeStore.showTooltipAt(content, position, anchor, datum)
-      nivoTooltip?.showTooltipAt(content as any, position, anchor as any)
     },
-    [activeStore, nivoTooltip]
+    [activeStore]
   )
 
   const hideTooltip = useCallback(
     (immediateOrDelay: boolean | number = false, delayMs: number = 180) => {
       const immediate = typeof immediateOrDelay === 'boolean' ? immediateOrDelay : immediateOrDelay <= 0
       const delay = typeof immediateOrDelay === 'number' ? immediateOrDelay : delayMs
-
       activeStore.hideTooltip(immediate, delay)
-
-      if (immediate) {
-        nivoTooltip?.hideTooltip()
-      }
     },
-    [activeStore, nivoTooltip]
+    [activeStore]
   )
 
   const updatePosition = useCallback(
@@ -165,7 +143,6 @@ export function useChartTooltip(): ChartTooltipHandlers {
         },
         onMouseLeave: (event: React.MouseEvent) => {
           onMouseLeave?.(datum, event)
-          // Hide is non-immediate to prevent flickering when transitioning across items
           hideTooltip(false, 150)
         },
         onClick: (event: React.MouseEvent) => {

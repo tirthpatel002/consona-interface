@@ -26,6 +26,8 @@ import {
 import { ChartContext, ChartProvider, useChartContext } from '../chart-context'
 import { useChartTheme } from '../../hooks/use-chart-theme'
 import { useChartDimensions } from '../../hooks/use-chart-dimensions'
+import { useChartMotion } from '../../hooks/use-chart-motion'
+import { findTooltipElement, shouldRenderHeadlessChart } from '../../utils/chart-children'
 import type {
   ChartContainerVariant,
   ChartMargin,
@@ -126,26 +128,6 @@ export interface StreamChartProps extends Omit<React.HTMLAttributes<HTMLDivEleme
    Stream Chart Primitive
    ========================================================================== */
 
-function findTooltipElement(node: React.ReactNode): React.ReactElement | null {
-  if (!node) return null
-  for (const child of React.Children.toArray(node)) {
-    if (React.isValidElement(child)) {
-      if (
-        child.type === ChartTooltip ||
-        (child.type as any)?.displayName === 'ChartTooltip' ||
-        (child.type as any)?.name === 'ChartTooltip' ||
-        (child.props as any)?.['data-slot'] === 'chart-tooltip'
-      ) {
-        return child
-      }
-      if ((child.props as any)?.children) {
-        const found = findTooltipElement((child.props as any).children)
-        if (found) return found
-      }
-    }
-  }
-  return null
-}
 
 function StreamChartPrimitive({
   data = [],
@@ -179,6 +161,7 @@ function StreamChartPrimitive({
 }: StreamChartProps) {
   const { theme, colors } = useChartTheme({ palette })
   const { ref, width, isReady } = useChartDimensions({ height, aspectRatio })
+  const motionProps = useChartMotion()
   const rawObjects = React.useMemo(() => {
     if (!Array.isArray(data)) return []
     return data.filter((d): d is Record<string, any> => Boolean(d && typeof d === 'object'))
@@ -346,6 +329,7 @@ function StreamChartPrimitive({
         />
       )
     },
+    ...motionProps,
     ...chartProps,
     ...nivoProps,
     ...(slotProps.chart as any),
@@ -384,7 +368,7 @@ function StreamChartPrimitive({
     chartNode: visualizerNode,
   }
 
-  if (children != null) {
+  if (shouldRenderHeadlessChart(children)) {
     return (
       <ChartProvider value={contextValue}>
         {children}

@@ -1,9 +1,9 @@
 /**
- * Nivo theme specification bridge connecting Consona Interface design tokens
- * with Nivo's SVG & Canvas render tree.
+ * Chart theme bridge connecting Consona Interface design tokens
+ * with the underlying SVG & Canvas render tree.
  */
 
-export interface NivoThemeOptions {
+export interface ChartThemeOptions {
   textColor?: string
   fontSize?: number
   fontFamily?: string
@@ -13,13 +13,17 @@ export interface NivoThemeOptions {
   tooltipFg?: string
   tooltipBorder?: string
   tooltipShadow?: string
+  /** Reserved for future dark-specific token overrides (CSS vars already adapt). */
   isDark?: boolean
 }
 
+/** @deprecated Use `ChartThemeOptions`. */
+export type NivoThemeOptions = ChartThemeOptions
+
 /**
- * Creates a compliant Nivo Theme object synchronized with Consona Interface styles.
+ * Creates a chart theme object synchronized with Consona Interface styles.
  */
-export function createNivoTheme(options: NivoThemeOptions = {}): any {
+export function createChartTheme(options: ChartThemeOptions = {}): any {
   const {
     textColor = 'var(--muted-fg, #6b7280)',
     fontSize = 11,
@@ -30,6 +34,7 @@ export function createNivoTheme(options: NivoThemeOptions = {}): any {
     tooltipFg = 'var(--fg, #111827)',
     tooltipBorder = 'var(--border, rgba(140, 140, 140, 0.3))',
   } = options
+  void options.isDark
 
   return {
     background: 'transparent',
@@ -173,3 +178,6 @@ export function createNivoTheme(options: NivoThemeOptions = {}): any {
     },
   }
 }
+
+/** @deprecated Use `createChartTheme`. */
+export const createNivoTheme = createChartTheme

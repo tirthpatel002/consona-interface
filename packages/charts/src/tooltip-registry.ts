@@ -76,6 +76,7 @@ export function createTooltipStore(initialOptions: TooltipStoreOptions = {}): To
 
   let canvasElement: HTMLElement | null = null
   let hideTimer: ReturnType<typeof setTimeout> | null = null
+  let defaultHideDelayMs = initialOptions.hideDelayMs ?? 180
   const listeners = new Set<(s: TooltipState) => void>()
 
   const notify = () => {
@@ -155,7 +156,7 @@ export function createTooltipStore(initialOptions: TooltipStoreOptions = {}): To
     showTooltip(content, { position, anchor: anchor as TooltipAnchor, datum })
   }
 
-  const hideTooltip = (immediate: boolean = false, delayMs: number = 180) => {
+  const hideTooltip = (immediate: boolean = false, delayMs: number = defaultHideDelayMs) => {
     cancelHide()
 
     // If configured to persist in canvas and cursor is currently within canvas, preserve tooltip
@@ -167,6 +168,7 @@ export function createTooltipStore(initialOptions: TooltipStoreOptions = {}): To
       state = {
         ...state,
         isOpen: false,
+        content: immediate ? null : state.content,
       }
       notify()
     } else {
@@ -191,24 +193,30 @@ export function createTooltipStore(initialOptions: TooltipStoreOptions = {}): To
     notify()
   }
 
-  const onCanvasPointerEnter = (event: React.PointerEvent | React.MouseEvent) => {
+  const onCanvasPointerEnter = (_event: React.PointerEvent | React.MouseEvent) => {
     cancelHide()
-    state.isHoveringCanvas = true
+    if (!state.isHoveringCanvas) {
+      state = { ...state, isHoveringCanvas: true }
+      notify()
+    } else {
+      state = { ...state, isHoveringCanvas: true }
+    }
   }
 
   const onCanvasPointerMove = (event: React.PointerEvent | React.MouseEvent) => {
     cancelHide()
-    state.isHoveringCanvas = true
+    state = { ...state, isHoveringCanvas: true }
     if (state.isOpen && state.followCursor) {
       const coords = getCanvasCoords(event)
       updatePosition(coords.x, coords.y)
     }
   }
 
-  const onCanvasPointerLeave = (event?: React.PointerEvent | React.MouseEvent) => {
-    state.isHoveringCanvas = false
+  const onCanvasPointerLeave = (_event?: React.PointerEvent | React.MouseEvent) => {
+    state = { ...state, isHoveringCanvas: false }
+    notify()
     // When pointer leaves the canvas boundary, initiate graceful dismissal
-    hideTooltip(false, 150)
+    hideTooltip(false, defaultHideDelayMs)
   }
 
   const setCanvasRef = (element: HTMLElement | null) => {
@@ -216,14 +224,27 @@ export function createTooltipStore(initialOptions: TooltipStoreOptions = {}): To
   }
 
   const setOptions = (options: TooltipStoreOptions) => {
-    if (options.persistInCanvas !== undefined) state.persistInCanvas = options.persistInCanvas
-    if (options.followCursor !== undefined) state.followCursor = options.followCursor
+    if (options.persistInCanvas !== undefined) {
+      state = { ...state, persistInCanvas: options.persistInCanvas }
+    }
+    if (options.followCursor !== undefined) {
+      state = { ...state, followCursor: options.followCursor }
+    }
+    if (options.hideDelayMs !== undefined) {
+      defaultHideDelayMs = options.hideDelayMs
+    }
   }
 
   const destroy = () => {
     cancelHide()
     listeners.clear()
     canvasElement = null
+    state = {
+      ...state,
+      isOpen: false,
+      content: null,
+      isHoveringCanvas: false,
+    }
   }
 
   return {

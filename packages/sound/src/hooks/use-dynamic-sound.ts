@@ -9,7 +9,7 @@ import type {
 } from '../engine/types'
 
 export interface UseDynamicSoundOptions {
-  /** Sound cue identifier (default: 'cursor'). */
+  /** Sound cue identifier (default: 'wind-ambient'). */
   cue?: SoundName
   /** Sound variant identifier. */
   variant?: string

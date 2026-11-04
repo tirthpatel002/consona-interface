@@ -2,16 +2,25 @@
  * @file gantt-dependencies.tsx
  * Optional SVG dependency layer connecting predecessor → successor bars.
  * Uses live drag layout (engine.state.drag) every pointer move.
- * Strokes are a uniform whitish color (bars use soft pastel fills so the line stays readable).
+ * Strokes segment against bar rects so crossings pick up bar contrast ink.
  */
 
 import React, { useMemo } from 'react'
 import { cn } from '@consona/interface-core'
 import { createInterfaceComponent } from '@consona/interface-core'
 import {
-  dependencyCubicPath,
   GANTT_BAR_VISUAL_HEIGHT,
+  GANTT_ROW_HEIGHT,
+  barRectFromLayout,
+  barsNearEdgeSpan,
+  dependencyCubicPath,
+  dependencyTipStroke,
   outlinedDependencyArrowPath,
+  segmentDependencyStroke,
+  softBarFill,
+  softBarInk,
+  type GanttBarRect,
+  type GanttRowWindow,
 } from '../../engine'
 import { useOptionalGantt } from '../../hooks'
 
@@ -20,12 +29,14 @@ export interface GanttDependenciesSlots {}
 export interface GanttDependenciesProps extends React.ComponentPropsWithoutRef<'svg'> {
   /** Row height used to compute vertical anchors. Default: 40 (h-10). */
   rowHeight?: number
-  /** Visual bar height (kept for API compat). Default: 28 (h-7). */
+  /** Visual bar height for crossing hit-tests. Default: 28 (h-7). */
   barHeight?: number
-  /** Uniform stroke for the whole edge + arrowhead. Default: whitish. */
+  /** Uniform stroke for non-crossing segments. Default: whitish. */
   stroke?: string
   /** Opacity for dependency strokes. Default: 0.92. */
   strokeOpacity?: number
+  /** Vertical row window — edges whose endpoints fall outside are skipped. */
+  rowWindow?: GanttRowWindow
   /** Custom CSS classes. */
   className?: string
 }
@@ -35,16 +46,17 @@ const WHITISH_STROKE = 'color-mix(in oklab, white 48%, var(--fg, #111))'
 
 interface EdgeGeom {
   key: string
-  path: string
+  segments: { d: string; stroke: string }[]
   arrowPath: string
   tipStroke: string
 }
 
 const GanttDependenciesPrimitive = ({
-  rowHeight = 40,
-  barHeight: _barHeight = GANTT_BAR_VISUAL_HEIGHT,
+  rowHeight = GANTT_ROW_HEIGHT,
+  barHeight = GANTT_BAR_VISUAL_HEIGHT,
   stroke = WHITISH_STROKE,
   strokeOpacity = 0.92,
+  rowWindow: rowWin,
   className,
   ...props
 }: GanttDependenciesProps) => {
@@ -54,9 +66,27 @@ const GanttDependenciesPrimitive = ({
   const getLiveBarLayout = gantt?.helpers.getLiveBarLayout
   const getId = gantt?.helpers.getId
   const getDependencies = gantt?.helpers.getDependencies
+  const getColor = gantt?.helpers.getColor
   const timelineWidthPx = gantt?.helpers.timelineWidthPx ?? 0
   const drag = gantt?.state.drag
   const dependencyLink = gantt?.state.dependencyLink
+
+  const bars: GanttBarRect[] = useMemo(() => {
+    if (!items || !getLiveBarLayout || !getId) return []
+    return items.map((item, rowIndex) => {
+      const id = getId(item)
+      const layout = getLiveBarLayout(item)
+      const color = getColor?.(item)
+      const fill = color ? softBarFill(color) : undefined
+      const ink = color ? softBarInk(color) : undefined
+      return barRectFromLayout(id, layout, rowIndex, rowHeight, barHeight, { fill, ink })
+    })
+  }, [items, getLiveBarLayout, getId, getColor, rowHeight, barHeight, drag])
+
+  const visibleRange = useMemo(() => {
+    if (!rowWin) return null
+    return { start: rowWin.startIndex, end: rowWin.endIndex }
+  }, [rowWin])
 
   const edges = useMemo(() => {
     if (!items || !getLiveBarLayout || !getId || !getDependencies) return [] as EdgeGeom[]
@@ -72,6 +102,14 @@ const GanttDependenciesPrimitive = ({
       for (const fromId of deps) {
         const fromIndex = idToIndex.get(fromId)
         if (fromIndex == null) continue
+        if (
+          visibleRange &&
+          (fromIndex < visibleRange.start - 2 ||
+            fromIndex >= visibleRange.end + 2) &&
+          (rowIndex < visibleRange.start - 2 || rowIndex >= visibleRange.end + 2)
+        ) {
+          continue
+        }
         const fromItem = items[fromIndex]
         if (!fromItem) continue
         const fromLayout = getLiveBarLayout(fromItem)
@@ -79,16 +117,33 @@ const GanttDependenciesPrimitive = ({
         const y1 = fromIndex * rowHeight + rowHeight / 2
         const x2 = toLayout.left
         const y2 = rowIndex * rowHeight + rowHeight / 2
+        const near = barsNearEdgeSpan(bars, x1, x2)
+        const segments = segmentDependencyStroke(x1, y1, x2, y2, near, {
+          ignoreIds: [fromId, toId],
+        }).map((seg) => ({
+          d: seg.d,
+          stroke: seg.crossing && seg.crossingInk ? seg.crossingInk : stroke,
+        }))
         result.push({
           key: `${fromId}->${toId}`,
-          path: dependencyCubicPath(x1, y1, x2, y2),
+          segments,
           arrowPath: outlinedDependencyArrowPath(x1, y1, x2, y2),
-          tipStroke: stroke,
+          tipStroke: dependencyTipStroke(x2, y2, near, stroke),
         })
       }
     })
     return result
-  }, [items, getLiveBarLayout, getId, getDependencies, rowHeight, drag, stroke])
+  }, [
+    items,
+    getLiveBarLayout,
+    getId,
+    getDependencies,
+    rowHeight,
+    drag,
+    stroke,
+    bars,
+    visibleRange,
+  ])
 
   const linkPath = useMemo(() => {
     if (!dependencyLink || !items || !getLiveBarLayout || !getId) return null
@@ -104,13 +159,13 @@ const GanttDependenciesPrimitive = ({
     return {
       path: dependencyCubicPath(x1, y1, x2, y2),
       arrowPath: outlinedDependencyArrowPath(x1, y1, x2, y2),
-      tipStroke: stroke,
+      tipStroke: dependencyTipStroke(x2, y2, bars, stroke),
       x1,
       y1,
       x2,
       y2,
     }
-  }, [dependencyLink, items, getLiveBarLayout, getId, rowHeight, stroke])
+  }, [dependencyLink, items, getLiveBarLayout, getId, rowHeight, stroke, bars])
 
   if (!gantt) return null
   if (edges.length === 0 && !linkPath) return null
@@ -133,14 +188,17 @@ const GanttDependenciesPrimitive = ({
     >
       {edges.map((edge) => (
         <g key={edge.key} data-edge={edge.key}>
-          <path
-            d={edge.path}
-            fill="none"
-            stroke={stroke}
-            strokeWidth={1.5}
-            strokeLinecap="round"
-            opacity={strokeOpacity}
-          />
+          {edge.segments.map((seg, i) => (
+            <path
+              key={`${edge.key}-${i}`}
+              d={seg.d}
+              fill="none"
+              stroke={seg.stroke}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              opacity={strokeOpacity}
+            />
+          ))}
           <path
             d={edge.arrowPath}
             fill="none"
@@ -186,10 +244,10 @@ export const GanttDependencies = createInterfaceComponent<
     name: 'GanttDependencies',
     category: 'data',
     description:
-      'Optional SVG dependency layer; uniform whitish stroke over soft pastel bars.',
+      'Optional SVG dependency layer with bar-crossing stroke segmentation and arrow tips.',
     version: '1.0.0',
     props: {
-      rowHeight: 40,
+      rowHeight: GANTT_ROW_HEIGHT,
       barHeight: GANTT_BAR_VISUAL_HEIGHT,
       stroke: WHITISH_STROKE,
       strokeOpacity: 0.92,

@@ -96,7 +96,7 @@ const INTENT_CLASSES: Record<SoundTriggerIntent, string> = {
 export const SoundTriggerIcon = createInterfaceComponent<React.HTMLAttributes<HTMLSpanElement>>(
   {
     name: 'SoundTriggerIcon',
-    category: 'media',
+    category: 'feedback',
     description: 'Leading icon slot for SoundTrigger component.',
     version: '1.0.0',
   },
@@ -106,7 +106,7 @@ export const SoundTriggerIcon = createInterfaceComponent<React.HTMLAttributes<HT
 export const SoundTriggerRightIcon = createInterfaceComponent<React.HTMLAttributes<HTMLSpanElement>>(
   {
     name: 'SoundTriggerRightIcon',
-    category: 'media',
+    category: 'feedback',
     description: 'Trailing icon slot for SoundTrigger component.',
     version: '1.0.0',
   },
@@ -116,7 +116,7 @@ export const SoundTriggerRightIcon = createInterfaceComponent<React.HTMLAttribut
 export const SoundTriggerIndicator = createInterfaceComponent<SoundTriggerIndicatorProps>(
   {
     name: 'SoundTriggerIndicator',
-    category: 'media',
+    category: 'feedback',
     description: 'Live audio visual pulse indicator dot for SoundTrigger component.',
     version: '1.0.0',
     props: {
@@ -136,17 +136,24 @@ export const SoundTriggerIndicator = createInterfaceComponent<SoundTriggerIndica
   )
 )
 
+const LOADER_SIZE_CLASSES = {
+  xs: 'w-2.5 h-2.5',
+  sm: 'w-3 h-3',
+  md: 'w-3.5 h-3.5',
+  lg: 'w-4 h-4',
+}
+
 export const SoundTriggerLoader = createInterfaceComponent<SoundTriggerLoaderProps>(
   {
     name: 'SoundTriggerLoader',
-    category: 'media',
+    category: 'feedback',
     description: 'Active synthesizer loading indicator for SoundTrigger component.',
     version: '1.0.0',
   },
-  ({ className, ...props }) => (
+  ({ size = 'md', className, ...props }) => (
     <svg
       data-slot="sound-trigger-loader"
-      className={cn('w-3.5 h-3.5 animate-spin text-current', className)}
+      className={cn(LOADER_SIZE_CLASSES[size] ?? LOADER_SIZE_CLASSES.md, 'animate-spin text-current', className)}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -163,7 +170,7 @@ export const SoundTriggerLoader = createInterfaceComponent<SoundTriggerLoaderPro
 export const SoundTriggerLabel = createInterfaceComponent<SoundTriggerLabelProps>(
   {
     name: 'SoundTriggerLabel',
-    category: 'media',
+    category: 'feedback',
     description: 'Text label for SoundTrigger component.',
     version: '1.0.0',
   },
@@ -195,6 +202,7 @@ const SoundTriggerPrimitive = ({
   onPointerUp,
   onPointerLeave,
   onPointerEnter,
+  onPointerCancel,
   ...props
 }: SoundTriggerProps) => {
   const { play, start, stop, isContinuousPlaying } = useSound()
@@ -202,12 +210,12 @@ const SoundTriggerPrimitive = ({
 
   const isLoopActive = isContinuousPlaying(cue, variant)
 
-  const fireSound = (inputMethod: any) => {
+  const fireSound = (inputMethod: string) => {
     play(cue, {
       variant,
       emphasis,
       volume,
-      context: { inputMethod },
+      context: { inputMethod: inputMethod as 'mouse' | 'touch' | 'pen' | 'keyboard' | 'programmatic' },
     })
   }
 
@@ -247,7 +255,7 @@ const SoundTriggerPrimitive = ({
     }
   }
 
-  const handlePointerEnd = (e: React.PointerEvent<HTMLButtonElement>) => {
+  const handlePointerEnd = () => {
     if (event === 'hold' && holdVoiceRef.current) {
       holdVoiceRef.current.stop(release)
       holdVoiceRef.current = null
@@ -262,29 +270,43 @@ const SoundTriggerPrimitive = ({
   }
 
   if (asChild && React.isValidElement(children)) {
-    const childProps = children.props as any
-    return React.cloneElement(children as React.ReactElement<any>, {
-      onClick: (e: any) => {
+    const childProps = children.props as Record<string, unknown> & {
+      className?: string
+      onClick?: (e: React.MouseEvent) => void
+      onPointerDown?: (e: React.PointerEvent) => void
+      onPointerUp?: (e: React.PointerEvent) => void
+      onPointerLeave?: (e: React.PointerEvent) => void
+      onPointerEnter?: (e: React.PointerEvent) => void
+      onPointerCancel?: (e: React.PointerEvent) => void
+    }
+    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+      className: cn(childProps.className, className),
+      onClick: (e: React.MouseEvent) => {
         childProps.onClick?.(e)
-        handleClick(e)
+        handleClick(e as React.MouseEvent<HTMLButtonElement>)
       },
-      onPointerDown: (e: any) => {
+      onPointerDown: (e: React.PointerEvent) => {
         childProps.onPointerDown?.(e)
-        handlePointerDown(e)
+        handlePointerDown(e as React.PointerEvent<HTMLButtonElement>)
       },
-      onPointerUp: (e: any) => {
+      onPointerUp: (e: React.PointerEvent) => {
         childProps.onPointerUp?.(e)
-        onPointerUp?.(e)
-        handlePointerEnd(e)
+        onPointerUp?.(e as React.PointerEvent<HTMLButtonElement>)
+        handlePointerEnd()
       },
-      onPointerLeave: (e: any) => {
+      onPointerLeave: (e: React.PointerEvent) => {
         childProps.onPointerLeave?.(e)
-        onPointerLeave?.(e)
-        handlePointerEnd(e)
+        onPointerLeave?.(e as React.PointerEvent<HTMLButtonElement>)
+        handlePointerEnd()
       },
-      onPointerEnter: (e: any) => {
+      onPointerCancel: (e: React.PointerEvent) => {
+        childProps.onPointerCancel?.(e)
+        onPointerCancel?.(e as React.PointerEvent<HTMLButtonElement>)
+        handlePointerEnd()
+      },
+      onPointerEnter: (e: React.PointerEvent) => {
         childProps.onPointerEnter?.(e)
-        handlePointerEnter(e)
+        handlePointerEnter(e as React.PointerEvent<HTMLButtonElement>)
       },
     })
   }
@@ -318,11 +340,15 @@ const SoundTriggerPrimitive = ({
       onPointerDown={handlePointerDown}
       onPointerUp={(e) => {
         onPointerUp?.(e)
-        handlePointerEnd(e)
+        handlePointerEnd()
       }}
       onPointerLeave={(e) => {
         onPointerLeave?.(e)
-        handlePointerEnd(e)
+        handlePointerEnd()
+      }}
+      onPointerCancel={(e) => {
+        onPointerCancel?.(e)
+        handlePointerEnd()
       }}
       onPointerEnter={handlePointerEnter}
       className={cn(
@@ -341,7 +367,7 @@ const SoundTriggerPrimitive = ({
 export const SoundTrigger = createInterfaceComponent<SoundTriggerProps, SoundTriggerSlots>(
   {
     name: 'SoundTrigger',
-    category: 'media',
+    category: 'feedback',
     description: 'Declarative component wrapper or button that triggers synthesized sound cues or continuous loops on interaction events.',
     version: '1.2.0',
     props: {

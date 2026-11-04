@@ -20,6 +20,7 @@ import {
   buildColumns,
   createGanttEngine,
   itemExtentMs,
+  toMs,
   type GanttColumn,
   type GanttCreateEvent,
   type GanttDependencyChangeEvent,
@@ -100,17 +101,21 @@ export {
   useOptionalGanttCompound,
 }
 
+const FALLBACK_EPOCH = 0
+
 /**
- * Default field accessors for standard JSON task objects (`id`, `start`/`startDate`, `end`/`endDate`, `label`/`title`/`name`, `color`, `dependencies`).
- * Enables zero-accessor usage in declarative/streaming runtimes like OpenUI Lang and prevents crashes while props stream in.
+ * Default field accessors for standard JSON task objects.
+ * Invalid / missing dates yield NaN via `toMs` (layoutBar falls back to a one-cell bar).
+ * Ids fall back to a stable empty string — callers should supply real ids.
  */
 export const DEFAULT_GANTT_ACCESSORS: GanttFieldAccessors<any> = {
   getId: (item: any) => String(item?.id ?? item?.key ?? ''),
-  getStart: (item: any) => item?.start ?? item?.startDate ?? new Date(),
-  getEnd: (item: any) => item?.end ?? item?.endDate ?? new Date(),
+  getStart: (item: any) => item?.start ?? item?.startDate ?? FALLBACK_EPOCH,
+  getEnd: (item: any) => item?.end ?? item?.endDate ?? FALLBACK_EPOCH,
   getLabel: (item: any) => item?.label ?? item?.title ?? item?.name,
   getColor: (item: any) => item?.color,
-  getDependencies: (item: any) => (Array.isArray(item?.dependencies) ? item.dependencies : undefined),
+  getDependencies: (item: any) =>
+    Array.isArray(item?.dependencies) ? item.dependencies : undefined,
 }
 
 export interface GanttProviderProps<T = unknown> extends GanttEngineOptions {
@@ -120,6 +125,8 @@ export interface GanttProviderProps<T = unknown> extends GanttEngineOptions {
   accessors?: GanttFieldAccessors<T>
   /** Controlled view range (optional). */
   viewRange?: GanttViewRange
+  /** Called when the engine view range changes (toolbar or imperative). */
+  onViewRangeChange?: (viewRange: GanttViewRange) => void
   /** Called when a bar move/resize commits new dates. */
   onItemChange?: (event: GanttItemChangeEvent<T>) => void
   /** Called when a dependency edge is added or removed. */
@@ -145,7 +152,7 @@ export interface GanttProviderProps<T = unknown> extends GanttEngineOptions {
   railCollapsed?: boolean
   /** Setter for rail collapsed state. */
   setRailCollapsed?: (collapsed: boolean) => void
-  /** Inject a pre-built engine (testing / advanced). */
+  /** Inject a pre-built engine (testing / advanced). Never destroyed by the provider. */
   engine?: GanttEngine
   /** Provider children. */
   children: ReactNode
@@ -175,11 +182,13 @@ function useStableAccessors<T>(accessors?: GanttFieldAccessors<T>): GanttFieldAc
 
 /**
  * Root provider that owns a GanttEngine and publishes ambient compound context.
+ * Strict Mode–safe: owned engines are destroyed on a deferred microtask so remount reuses them.
  */
 export function GanttProvider<T = unknown>({
   items = [],
   accessors = DEFAULT_GANTT_ACCESSORS,
   viewRange: viewRangeProp,
+  onViewRangeChange,
   onItemChange,
   onDependencyChange,
   onCreate,
@@ -198,26 +207,30 @@ export function GanttProvider<T = unknown>({
     [items]
   )
   const engineRef = useRef<GanttEngine | null>(null)
+  const ownedRef = useRef(false)
+  const mountedRef = useRef(false)
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const [railWidthPx, setRailWidthPxState] = useState(railWidthPxProp)
   const anchor = engineOptions.anchor
-  // Anchor Date identity is unstable when callers pass `new Date()` inline.
-  // Depend on epoch ms so effects/memos do not thrash every render.
   const anchorMs = anchor?.getTime()
   const anchorRef = useRef(anchor)
   anchorRef.current = anchor
 
-  if (!engineRef.current) {
-    engineRef.current =
-      propEngine ??
-      createGanttEngine({
-        ...engineOptions,
-        viewRange: viewRangeProp ?? 'month',
-        dependenciesEnabled: Boolean(onDependencyChange) || engineOptions.dependenciesEnabled,
-      })
+  const stableOnViewRangeChange = useCallbackRef(onViewRangeChange)
+
+  if (propEngine) {
+    engineRef.current = propEngine
+    ownedRef.current = false
+  } else if (!engineRef.current) {
+    engineRef.current = createGanttEngine({
+      ...engineOptions,
+      viewRange: viewRangeProp ?? 'month',
+      dependenciesEnabled: Boolean(onDependencyChange) || engineOptions.dependenciesEnabled,
+    })
+    ownedRef.current = true
   }
 
-  const engine = engineRef.current
+  const engine = engineRef.current!
   const state = useEngineState(engine)
 
   const stableAccessors = useStableAccessors(accessors)
@@ -225,11 +238,34 @@ export function GanttProvider<T = unknown>({
   const stableOnDependencyChange = useCallbackRef(onDependencyChange)
   const stableOnCreate = useCallbackRef(onCreate)
 
+  const hasOnCreate = Boolean(onCreate)
+  const hasOnDependencyChange = Boolean(onDependencyChange)
   const dependenciesEnabledOpt = engineOptions.dependenciesEnabled
-  // Keep dependenciesEnabled in sync when the consumer wires/unwires the callback.
+
   useEffect(() => {
-    engine.setDependenciesEnabled(Boolean(onDependencyChange) || Boolean(dependenciesEnabledOpt))
-  }, [engine, onDependencyChange, dependenciesEnabledOpt])
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (!ownedRef.current) return
+      const eng = engineRef.current
+      if (!eng) return
+      void Promise.resolve().then(() => {
+        if (mountedRef.current) return
+        if (engineRef.current !== eng) return
+        try {
+          eng.destroy()
+        } catch {
+          /* ignore */
+        }
+        if (engineRef.current === eng) engineRef.current = null
+      })
+    }
+  }, [propEngine])
+
+  // Keep dependenciesEnabled in sync — depend on presence flag, not callback identity.
+  useEffect(() => {
+    engine.setDependenciesEnabled(hasOnDependencyChange || Boolean(dependenciesEnabledOpt))
+  }, [engine, hasOnDependencyChange, dependenciesEnabledOpt])
 
   useEffect(() => {
     if (railWidthPxProp !== railWidthPx) setRailWidthPxState(railWidthPxProp)
@@ -237,9 +273,6 @@ export function GanttProvider<T = unknown>({
   }, [railWidthPxProp])
 
   // Sync controlled viewRange only when the *prop* changes.
-  // Do not reset the engine when the toolbar updates viewRange internally —
-  // that fight (prop month vs engine week) rebuilt columns every click and
-  // could cascade with scroll/now effects into a render storm.
   const prevViewRangePropRef = useRef<GanttViewRange | undefined>(undefined)
   useEffect(() => {
     if (viewRangeProp == null) return
@@ -251,16 +284,20 @@ export function GanttProvider<T = unknown>({
     }
   }, [viewRangeProp, engine, anchorMs])
 
+  // Notify parent when engine view range changes (toolbar / imperative).
+  const lastEmittedViewRangeRef = useRef(state.viewRange)
+  useEffect(() => {
+    if (state.viewRange === lastEmittedViewRangeRef.current) return
+    lastEmittedViewRangeRef.current = state.viewRange
+    stableOnViewRangeChange?.(state.viewRange)
+  }, [state.viewRange, stableOnViewRangeChange])
+
   useEffect(() => {
     engine.setNow()
     const id = window.setInterval(() => engine.setNow(), 60_000)
     return () => window.clearInterval(id)
   }, [engine])
 
-  // Columns span the default view window ∪ item extents (via accessors), every viewRange.
-  // Recompute when items, accessors, viewRange, or anchor change.
-  // Use stableAccessors so inline parent accessor objects do not rebuild columns
-  // (and thrash syncColumns / child memos) every render.
   const columns = useMemo(() => {
     const extent = itemExtentMs(safeItems, stableAccessors)
     return buildColumns(state.viewRange, {
@@ -275,7 +312,6 @@ export function GanttProvider<T = unknown>({
     })
   }, [state.viewRange, anchorMs, safeItems, stableAccessors])
 
-  // Keep engine rangeStart/rangeEnd + columnCount aligned with provider columns before paint.
   useLayoutEffect(() => {
     engine.syncColumns(columns)
   }, [engine, columns])
@@ -284,15 +320,8 @@ export function GanttProvider<T = unknown>({
     setRailWidthPxState((prev) => (prev === px ? prev : px))
   }, [])
 
-  // Feature gates must use prop presence — stable callback refs are always truthy functions.
-  const hasOnCreate = Boolean(onCreate)
-  const hasOnDependencyChange = Boolean(onDependencyChange)
-  // Edge chips: off with expanded title rail (rail has ‹/›); on when rail is
-  // hidden or collapsed (labels/overflow hide — chips take over); explicit prop wins.
   const showEdgeChips =
-    showEdgeChipsProp !== undefined
-      ? showEdgeChipsProp
-      : !showRail || railCollapsed
+    showEdgeChipsProp !== undefined ? showEdgeChipsProp : !showRail || railCollapsed
 
   const setRailCollapsed = useCallback(
     (collapsed: boolean) => {
@@ -301,7 +330,6 @@ export function GanttProvider<T = unknown>({
     [setRailCollapsedProp]
   )
 
-  // In-bar titles when the rail column is off or collapsed (title lives in rail when expanded).
   const showBarTitle = !showRail || railCollapsed
 
   const value = useMemo<GanttContextValue<T>>(
@@ -354,3 +382,6 @@ export function GanttProvider<T = unknown>({
     </GanttCompoundProvider>
   )
 }
+
+// Re-export toMs for consumers wiring custom accessors against DEFAULT_GANTT_ACCESSORS.
+export { toMs }

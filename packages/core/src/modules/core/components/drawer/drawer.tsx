@@ -1,5 +1,4 @@
-import React, { use } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import React, { use, useCallback, useEffect, useRef, useState } from 'react'
 import {
   Modal as RACModal,
   ModalOverlay as RACModalOverlay,
@@ -21,13 +20,6 @@ import { OverlayTrigger } from '../../../../core/overlay-trigger'
 import { renderSlot } from '../../../../core/slot-resolver'
 import type { SlotComponents, SlotPropsMap } from '../../../../core/types'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-
-/* ==========================================================================
-   Framer Motion wrappers
-   ========================================================================== */
-
-const DrawerMotionOverlay = motion.create(RACModalOverlay)
-const DrawerMotionModal = motion.create(RACModal)
 
 /* ==========================================================================
    Drawer Slots & State
@@ -68,6 +60,86 @@ export interface DrawerContentProps
   slotProps?: SlotPropsMap<DrawerSlots>
 }
 
+const DRAWER_ENTER_MS = 320
+
+function useDrawerDrag(
+  side: 'top' | 'bottom' | 'left' | 'right',
+  enabled: boolean,
+  onDismiss: () => void
+) {
+  const startRef = useRef(0)
+  const draggingRef = useRef(false)
+  const [offset, setOffset] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const reset = useCallback(() => {
+    draggingRef.current = false
+    setIsDragging(false)
+    setOffset(0)
+  }, [])
+
+  useEffect(() => {
+    if (!enabled) reset()
+  }, [enabled, reset])
+
+  const onPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      if (!enabled || event.button !== 0) return
+      draggingRef.current = true
+      setIsDragging(true)
+      startRef.current = side === 'left' || side === 'right' ? event.clientX : event.clientY
+      event.currentTarget.setPointerCapture(event.pointerId)
+    },
+    [enabled, side]
+  )
+
+  const onPointerMove = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      if (!draggingRef.current) return
+      const current = side === 'left' || side === 'right' ? event.clientX : event.clientY
+      const delta = current - startRef.current
+      if (side === 'bottom') setOffset(Math.max(0, delta))
+      else if (side === 'top') setOffset(Math.min(0, delta))
+      else if (side === 'left') setOffset(Math.min(0, delta))
+      else setOffset(Math.max(0, delta))
+    },
+    [side]
+  )
+
+  const onPointerUp = useCallback(() => {
+    if (!draggingRef.current) return
+    draggingRef.current = false
+    setIsDragging(false)
+    const distance = Math.abs(offset)
+    const threshold =
+      side === 'left' || side === 'right'
+        ? Math.min(140, window.innerWidth * 0.25)
+        : Math.min(140, window.innerHeight * 0.2)
+    if (distance > threshold) onDismiss()
+    else setOffset(0)
+  }, [offset, onDismiss, side])
+
+  const transform =
+    offset === 0
+      ? undefined
+      : side === 'left' || side === 'right'
+        ? `translate3d(${offset}px,0,0)`
+        : `translate3d(0,${offset}px,0)`
+
+  return {
+    style: {
+      transform,
+      transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.32, 0.72, 0, 1)',
+    } as React.CSSProperties,
+    listeners: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp,
+      onPointerCancel: onPointerUp,
+    },
+  }
+}
+
 const DrawerContentPrimitive = ({
   side = 'bottom',
   isFloat = false,
@@ -83,107 +155,107 @@ const DrawerContentPrimitive = ({
   const isOpen = props.isOpen ?? state?.isOpen ?? false
   const onOpenChange = props.onOpenChange ?? state?.setOpen
 
+  // Defer drag until CSS enter finishes so pointer capture can't stall the slide.
+  const [dragReady, setDragReady] = useState(false)
+  useEffect(() => {
+    if (!isOpen) {
+      setDragReady(false)
+      return
+    }
+    setDragReady(false)
+    const id = window.setTimeout(() => setDragReady(true), DRAWER_ENTER_MS)
+    return () => window.clearTimeout(id)
+  }, [isOpen])
+
+  const dismiss = useCallback(() => {
+    onOpenChange?.(false)
+    state?.close?.()
+  }, [onOpenChange, state])
+
+  const drag = useDrawerDrag(side, dragReady && isOpen, dismiss)
+
+  // Width tracks the viewport: a portion on large screens (`--drawer-max`),
+  // growing toward full width as the screen shrinks (`min(100%, …)`).
+  const sideWidth = isFloat
+    ? 'w-[min(calc(100%-1rem),var(--drawer-max,28rem))]'
+    : 'w-[min(100%,var(--drawer-max,28rem))]'
+
   const sideClass = {
-    top: isFloat ? 'inset-x-2 top-2 rounded-macro' : 'inset-x-0 top-0 rounded-b-macro',
-    bottom: isFloat ? 'inset-x-2 bottom-2 rounded-macro' : 'inset-x-0 bottom-0 rounded-t-macro',
+    top: [
+      'inset-x-0 mx-auto',
+      sideWidth,
+      isFloat ? 'top-2 rounded-macro' : 'top-0 rounded-b-macro',
+    ].join(' '),
+    bottom: [
+      'inset-x-0 mx-auto',
+      sideWidth,
+      isFloat ? 'bottom-2 rounded-macro' : 'bottom-0 rounded-t-macro',
+    ].join(' '),
     left: [
-      'w-full max-w-xs overflow-y-auto',
+      'overflow-y-auto',
+      sideWidth,
       isFloat ? 'inset-y-2 left-2 rounded-macro' : 'inset-y-0 left-0 h-auto',
     ].join(' '),
     right: [
-      'w-full max-w-xs overflow-y-auto',
+      'overflow-y-auto',
+      sideWidth,
       isFloat ? 'inset-y-2 right-2 rounded-macro' : 'inset-y-0 right-0 h-auto',
     ].join(' '),
   }[side]
 
-  const initialMotion = {
-    x: side === 'left' ? '-100%' : side === 'right' ? '100%' : 0,
-    y: side === 'top' ? '-100%' : side === 'bottom' ? '100%' : 0,
-  }
-
+  // No AnimatePresence / motion.create — those fight RAC mount + preventScroll
+  // and freeze mid-slide on mobile. CSS data-entering runs on the compositor.
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <DrawerMotionOverlay
-          isDismissable
-          isOpen={isOpen}
-          onOpenChange={onOpenChange}
-          initial={{ backgroundColor: 'rgba(0, 0, 0, 0)', backdropFilter: 'blur(0px)' }}
-          animate={{ backgroundColor: 'rgba(0, 0, 0, 0.2)', backdropFilter: 'blur(1px)' }}
-          exit={{ backgroundColor: 'rgba(0, 0, 0, 0)', backdropFilter: 'blur(0px)' }}
-          transition={{ duration: 0.15, ease: 'easeInOut' }}
+    <RACModalOverlay
+      isDismissable
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      data-slot="drawer-overlay"
+      className={cn(
+        'consona-drawer-overlay fixed inset-0 z-50',
+        '[--drawer-pad:32px]',
+        overlay?.className
+      )}
+      {...props}
+    >
+      <RACModal
+        data-slot="drawer-surface"
+        data-side={side}
+        className={cn(
+          'consona-drawer-surface fixed max-h-full touch-none overflow-hidden bg-overlay text-fg',
+          'border border-border/40 shadow-2xl',
+          sideClass,
+          className
+        )}
+        style={drag.style}
+        {...drag.listeners}
+      >
+        <RACDialog
+          aria-label="Drawer"
+          role="dialog"
           className={cn(
-            'fixed inset-0 z-50 will-change-auto [--visual-viewport-vertical-padding:32px]',
-            'motion-reduce:backdrop-blur-none',
-            overlay?.className
+            'relative flex w-full flex-col overflow-hidden outline-hidden',
+            // Use dvh — RAC's --visual-viewport-height updates after preventScroll
+            // on mobile and restyles max-height mid-animation (the freeze).
+            side === 'top' || side === 'bottom'
+              ? 'max-h-[calc(100dvh-var(--drawer-pad))]'
+              : 'h-full'
           )}
         >
-          {({ state: overlayState }) => (
-            <DrawerMotionModal
-              data-slot="drawer-surface"
-              className={cn(
-                'fixed max-h-full touch-none overflow-hidden bg-overlay text-fg shadow-2xl',
-                'border border-border/40 will-change-transform',
-                sideClass,
-                className
-              )}
-              animate={{ x: 0, y: 0 }}
-              initial={initialMotion}
-              exit={initialMotion}
-              drag={side === 'left' || side === 'right' ? 'x' : 'y'}
-              whileDrag={{ cursor: 'grabbing' }}
-              dragConstraints={{ top: 0, bottom: 0, left: 0, right: 0 }}
-              dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
-              transition={{ duration: 0.15, ease: 'easeInOut' }}
-              onDragEnd={(_, { offset, velocity }) => {
-                if (side === 'bottom' && (velocity.y > 150 || offset.y > screen.height * 0.25)) {
-                  overlayState.close()
-                }
-                if (side === 'top' && (velocity.y < -150 || offset.y < screen.height * 0.25)) {
-                  overlayState.close()
-                }
-                if (side === 'left' && velocity.x < -150) {
-                  overlayState.close()
-                }
-                if (side === 'right' && velocity.x > 150) {
-                  overlayState.close()
-                }
-              }}
-              dragElastic={{
-                top: side === 'top' ? 1 : 0,
-                bottom: side === 'bottom' ? 1 : 0,
-                left: side === 'left' ? 1 : 0,
-                right: side === 'right' ? 1 : 0,
-              }}
-              dragPropagation
-            >
-              <RACDialog
-                aria-label="Drawer"
-                role="dialog"
-                className={cn(
-                  'relative flex flex-col overflow-hidden outline-hidden will-change-auto',
-                  side === 'top' || side === 'bottom'
-                    ? 'mx-auto max-h-[calc(var(--visual-viewport-height,100dvh)-var(--visual-viewport-vertical-padding))] max-w-lg'
-                    : 'h-full'
-                )}
-              >
-                {notch && side === 'bottom' && renderSlot(
-                  slots.notch,
-                  { ...slotProps?.notch, position: 'top' } as any,
-                  { defaultComponent: DrawerNotch as any }
-                )}
-                {children as React.ReactNode}
-                {notch && side === 'top' && renderSlot(
-                  slots.notch,
-                  { ...slotProps?.notch, position: 'bottom' } as any,
-                  { defaultComponent: DrawerNotch as any }
-                )}
-              </RACDialog>
-            </DrawerMotionModal>
+          {notch && side === 'bottom' && renderSlot(
+            slots.notch,
+            { ...slotProps?.notch, position: 'top' } as any,
+            { defaultComponent: DrawerNotch as any }
           )}
-        </DrawerMotionOverlay>
-      )}
-    </AnimatePresence>
+          {children as React.ReactNode}
+          {notch && side === 'top' && renderSlot(
+            slots.notch,
+            { ...slotProps?.notch, position: 'bottom' } as any,
+            { defaultComponent: DrawerNotch as any }
+          )}
+        </RACDialog>
+      </RACModal>
+    </RACModalOverlay>
   )
 }
 
@@ -191,7 +263,7 @@ export const DrawerContent = createInterfaceComponent<DrawerContentProps, Drawer
   {
     name: 'DrawerContent',
     category: 'overlay',
-    description: 'Animated slide-in drawer surface with gesture drag dismissal, backdrop blur, and optical radius.',
+    description: 'Animated slide-in drawer surface with CSS enter/exit motion and gesture drag dismissal.',
     version: '1.0.0',
     props: {
       side: 'bottom',
@@ -337,7 +409,7 @@ const DrawerBodyPrimitive = ({ className, ...props }: DrawerBodyProps) => (
     data-slot="drawer-body"
     slot="body"
     className={cn(
-      'isolate flex max-h-[calc(var(--visual-viewport-height,100dvh)-var(--visual-viewport-vertical-padding))] flex-col overflow-auto px-space-lg py-space-xs will-change-scroll',
+      'isolate flex max-h-[calc(100dvh-var(--drawer-pad,32px))] flex-col overflow-auto px-space-lg py-space-xs',
       className
     )}
     {...props}

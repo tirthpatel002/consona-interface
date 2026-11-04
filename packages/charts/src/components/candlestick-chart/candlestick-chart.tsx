@@ -26,6 +26,8 @@ import {
 } from '../chart-container'
 import { ChartContext, ChartProvider, useChartContext } from '../chart-context'
 import { useChartDimensions } from '../../hooks/use-chart-dimensions'
+import { useChartMotion } from '../../hooks/use-chart-motion'
+import { findTooltipElement, shouldRenderHeadlessChart } from '../../utils/chart-children'
 import { useChartTooltip } from '../../hooks/use-chart-tooltip'
 import { createTooltipStore } from '../../tooltip-registry'
 import type {
@@ -137,26 +139,6 @@ export interface CandlestickChartProps extends Omit<React.HTMLAttributes<HTMLDiv
    Candlestick Chart Primitive
    ========================================================================== */
 
-function findTooltipElement(node: React.ReactNode): React.ReactElement | null {
-  if (!node) return null
-  for (const child of React.Children.toArray(node)) {
-    if (React.isValidElement(child)) {
-      if (
-        child.type === ChartTooltip ||
-        (child.type as any)?.displayName === 'ChartTooltip' ||
-        (child.type as any)?.name === 'ChartTooltip' ||
-        (child.props as any)?.['data-slot'] === 'chart-tooltip'
-      ) {
-        return child
-      }
-      if ((child.props as any)?.children) {
-        const found = findTooltipElement((child.props as any).children)
-        if (found) return found
-      }
-    }
-  }
-  return null
-}
 
 function CandlestickChartPrimitive({
   data = [],
@@ -188,6 +170,7 @@ function CandlestickChartPrimitive({
   style,
 }: CandlestickChartProps) {
   const { ref, width, height: chartHeight, isReady } = useChartDimensions({ height, aspectRatio })
+  const motionProps = useChartMotion()
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [hiddenMA, setHiddenMA] = useState<Record<number, boolean>>({})
   const safeData = useMemo(() => {
@@ -482,7 +465,7 @@ function CandlestickChartPrimitive({
                 return (
                   <g
                     key={`candle-${d.date}`}
-                    className="cursor-pointer transition-opacity duration-150"
+                    className={motionProps.animate ? 'cursor-pointer transition-opacity duration-150' : 'cursor-pointer'}
                     opacity={hoverIndex === null || hoverIndex === i ? 1 : 0.4}
                     onMouseEnter={(e) => {
                       setHoverIndex(i)
@@ -598,7 +581,7 @@ function CandlestickChartPrimitive({
     chartNode: visualizerNode,
   }
 
-  if (children != null) {
+  if (shouldRenderHeadlessChart(children)) {
     return (
       <ChartProvider value={contextValue}>
         {children}
