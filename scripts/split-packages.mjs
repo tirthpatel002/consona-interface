@@ -226,10 +226,10 @@ function writePackageJson(mod) {
   const isCore = mod === 'core'
   const dependencies = {}
   if (!isCore) {
-    dependencies['@consona/interface-core'] = '*'
+    dependencies['@consona/interface-core'] = '^1.0.0'
   }
   for (const dep of EXTRA_DEPS[mod] ?? []) {
-    dependencies[dep] = '*'
+    dependencies[dep] = '^1.0.0'
   }
 
   // Copy runtime deps onto core; feature packages peer react only + workspace deps
@@ -275,12 +275,13 @@ function writePackageJson(mod) {
     types: './dist/index.d.ts',
     sideEffects: isCore ? ['**/*.css', './dist/theme/styles.css'] : false,
     exports: buildExportsMap(mod, pkgSrc),
-    files: ['dist', 'README.md'],
+    files: ['dist', 'README.md', 'LICENSE'],
     scripts: {
       build: 'tsc -p tsconfig.build.json && node ../../scripts/copy-package-assets.mjs --package ' + mod,
       prebuild:
         'node --input-type=module -e "import { rm } from \'node:fs/promises\'; await rm(\'dist\', { recursive: true, force: true })"',
       'type-check': 'tsc -p tsconfig.json --noEmit',
+      prepublishOnly: 'npm run build',
     },
     peerDependencies,
     ...(Object.keys(peerDependenciesMeta).length ? { peerDependenciesMeta } : {}),
@@ -379,10 +380,10 @@ function writeUmbrella() {
   ensureDir(path.join(dir, 'src'))
 
   const deps = {
-    '@consona/interface-core': '*',
+    '@consona/interface-core': '^1.0.0',
   }
   for (const mod of MODULES) {
-    deps[pkgName(mod)] = '*'
+    deps[pkgName(mod)] = '^1.0.0'
   }
 
   const exportsMap = {

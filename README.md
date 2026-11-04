@@ -1,4 +1,42 @@
-# Consona Interface 
+# Consona Interface
+
+npm workspaces monorepo. UI source lives in `packages/*/src`. Registry tooling is in `tools/registry/` and writes JSON to `/registry`.
+
+## Install
+
+```bash
+# slim — substrate + foundation components only (~2–3MB unpack)
+npm install @consona/interface-core
+
+# full umbrella — re-exports every module (pulls optional peers as needed)
+npm install @consona/interface@^2
+
+# pick modules
+npm install @consona/interface-core @consona/interface-dnd @consona/interface-media
+```
+
+| Package | What you get |
+|---|---|
+| `@consona/interface-core@1` | Theme, provider, foundation atoms |
+| `@consona/interface-*@1` | Feature modules (media, orb, dnd, map, charts, …) |
+| `@consona/interface@2` | Umbrella — depends on all modules |
+
+**Migrating from `@consona/interface@1.0.0`:** that release was a single monolith. It cannot be overwritten on npm. Install `@consona/interface@^2` for the same import surface, or switch to `@consona/interface-core` (+ modules) for a smaller tree. Subpath imports like `@consona/interface/button` move to `@consona/interface-core/button` (or keep using the umbrella’s `@consona/interface/core` / `@consona/interface/dnd` entry points).
+
+### Publish (maintainers)
+
+```bash
+npm login --registry https://registry.npmjs.org/
+npm whoami --registry https://registry.npmjs.org/
+
+npm run prepare:publish   # pin versions + LICENSE files
+npm run publish:dry       # auth + build + dry-run every package
+npm run publish:all:deprecate   # real publish + deprecate monolithic 1.0.0
+```
+
+Publish order is topological (core → leaves → dependents → umbrella). Encoded in `scripts/package-order.mjs`.
+
+---
 
 > **Vision:** Transform Consona Interface from a static component collection into a **modular, pluggable, self-documenting design engine**.
 >

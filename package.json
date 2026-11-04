@@ -15,7 +15,11 @@
     "build:all": "node scripts/build-all.mjs",
     "type-check": "npm run type-check --workspaces --if-present",
     "split:packages": "node scripts/split-packages.mjs",
-    "build:registry": "node --experimental-strip-types tools/registry/builder.ts"
+    "build:registry": "node --experimental-strip-types tools/registry/builder.ts",
+    "prepare:publish": "node scripts/prepare-publish.mjs",
+    "publish:dry": "node scripts/publish-all.mjs --dry-run",
+    "publish:all": "node scripts/publish-all.mjs",
+    "publish:all:deprecate": "node scripts/publish-all.mjs --deprecate-old"
   },
   "devDependencies": {
     "@dnd-kit/core": "^6.3.1",

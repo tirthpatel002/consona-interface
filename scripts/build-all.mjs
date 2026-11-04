@@ -4,31 +4,11 @@
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { PACKAGE_ORDER } from './package-order.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-const ORDER = [
-  '@consona/interface-core',
-  // leaves (only need core)
-  '@consona/interface-sound',
-  '@consona/interface-overlay',
-  '@consona/interface-glass',
-  '@consona/interface-interaction',
-  '@consona/interface-navigation',
-  '@consona/interface-gantt',
-  '@consona/interface-charts',
-  '@consona/interface-map',
-  '@consona/interface-media',
-  // dependents
-  '@consona/interface-orb',
-  '@consona/interface-dnd',
-  '@consona/interface-onboarding',
-  '@consona/interface-composites',
-  // umbrella
-  '@consona/interface',
-]
-
-for (const name of ORDER) {
+for (const name of PACKAGE_ORDER) {
   console.log(`\n=== building ${name} ===`)
   const r = spawnSync('npm', ['run', 'build', '-w', name], {
     cwd: root,

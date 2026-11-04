@@ -1,6 +1,6 @@
 {
   "name": "@consona/interface",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Consona Interface Enhanced — Micro-Kernel UI System on React Aria Components",
   "license": "MIT",
   "author": "Consona",
@@ -107,20 +107,20 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@consona/interface-core": "*",
-    "@consona/interface-charts": "*",
-    "@consona/interface-composites": "*",
-    "@consona/interface-dnd": "*",
-    "@consona/interface-gantt": "*",
-    "@consona/interface-glass": "*",
-    "@consona/interface-interaction": "*",
-    "@consona/interface-map": "*",
-    "@consona/interface-media": "*",
-    "@consona/interface-navigation": "*",
-    "@consona/interface-onboarding": "*",
-    "@consona/interface-orb": "*",
-    "@consona/interface-overlay": "*",
-    "@consona/interface-sound": "*"
+    "@consona/interface-core": "^1.0.0",
+    "@consona/interface-charts": "^1.0.0",
+    "@consona/interface-composites": "^1.0.0",
+    "@consona/interface-dnd": "^1.0.0",
+    "@consona/interface-gantt": "^1.0.0",
+    "@consona/interface-glass": "^1.0.0",
+    "@consona/interface-interaction": "^1.0.0",
+    "@consona/interface-map": "^1.0.0",
+    "@consona/interface-media": "^1.0.0",
+    "@consona/interface-navigation": "^1.0.0",
+    "@consona/interface-onboarding": "^1.0.0",
+    "@consona/interface-orb": "^1.0.0",
+    "@consona/interface-overlay": "^1.0.0",
+    "@consona/interface-sound": "^1.0.0"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
