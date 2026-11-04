@@ -1,13 +1,13 @@
 import { definePlugin } from '@consona/interface-core'
-import { OrbProvider } from './context'
 import { Orb } from './components/orb'
+import { SensitiveOrb } from './components/sensitive-orb'
 
 export const OrbPlugin = definePlugin({
   name: 'orb',
   version: '1.0.0',
-  description: 'Orb physics engine with shader uniforms and event forwarding.',
-  Provider: OrbProvider,
+  description: 'Procedural WebGPU orb with curated flow presets and audio-reactive sensitive mode.',
   components: {
     Orb,
+    SensitiveOrb,
   },
 })

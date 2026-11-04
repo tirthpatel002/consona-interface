@@ -39,7 +39,7 @@ export function createOrbRenderer({
 
   async function start(): Promise<() => void> {
     if (!navigator.gpu) {
-      throw new Error("WebGPU is not supported in this browser. Please enable WebGPU in chrome://flags or use a compatible browser.");
+      throw new Error("WebGPU is not supported in this browser. Use a browser with WebGPU enabled.");
     }
 
     const adapter = await navigator.gpu.requestAdapter();
@@ -63,7 +63,7 @@ export function createOrbRenderer({
     gpuContext.configure({ device, format, alphaMode: "premultiplied" });
 
     const shader = device.createShaderModule({
-      label: "consona-orb-glass-liquid",
+      label: "consona-orb-shader",
       code: orbShaderSource,
     });
     const compilation = await shader.getCompilationInfo();

@@ -655,7 +655,7 @@ export const OrbAudioPlayer = createInterfaceComponent<
     name: 'OrbAudioPlayer',
     category: 'composite',
     description:
-      'Audio-reactive player composite showcasing real-time WebGPU Liquid Glass Orb motion sensitive to audio frequency and volume when no track artwork is provided.',
+      'Audio-reactive player composite showcasing real-time WebGPU Consona Orb motion sensitive to audio frequency and volume when no track artwork is provided.',
     version: '1.0.0',
     slots: {
       artwork: OrbAudioArtwork,

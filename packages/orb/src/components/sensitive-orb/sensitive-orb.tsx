@@ -1,3 +1,5 @@
+'use client'
+
 /// <reference path="../../webgpu.d.ts" />
 
 import * as React from 'react'
@@ -10,6 +12,7 @@ import {
 import {
   type OrbParams,
   type StyleName,
+  orbRadiusRange,
 } from '../../engine/presets'
 import {
   defaultOrbActivationDuration,
@@ -98,9 +101,9 @@ export interface SensitiveOrbProps extends Omit<OrbProps, 'state' | 'slots' | 's
   idleSpeed?: number
   /** Base active motion speed (default: 1.8) */
   activeSpeed?: number
-  /** Base resting radius (default: 0.96) */
+  /** Base resting radius (default: 0.72, clamped to orb radius range) */
   baseRadius?: number
-  /** Maximum radius on volume / energy peaks (default: 1.0) */
+  /** Maximum radius on volume / energy peaks (default: 0.95) */
   maxRadius?: number
   /** Inertial smoothing response speed (higher = faster attack, default: 7.5) */
   smoothness?: number
@@ -135,8 +138,8 @@ function SensitiveOrbPrimitive(props: SensitiveOrbProps, ref?: React.Ref<HTMLDiv
     shadeSensitivity,
     idleSpeed = 0.35,
     activeSpeed = 1.8,
-    baseRadius = 0.96,
-    maxRadius = 1.0,
+    baseRadius = 0.72,
+    maxRadius = orbRadiusRange.max,
     smoothness = 7.5,
     reactive = true,
     styleName = 'aurora',
@@ -203,64 +206,69 @@ function SensitiveOrbPrimitive(props: SensitiveOrbProps, ref?: React.Ref<HTMLDiv
     shadeSensitivity,
   ])
 
-  // Continuous smoothed audio/signal energy with organic exponential damping
+  // Continuous smoothed audio/signal energy — keep energy in a ref so the
+  // rAF loop does not restart on every React state write.
   const smoothedEnergyRef = React.useRef(0)
-  const [smoothedEnergy, setSmoothedEnergy] = React.useState(0)
+  const signalRef = React.useRef(signal)
+  const volumeRef = React.useRef(rawAudioVolume)
+  const [energyTick, setEnergyTick] = React.useState(0)
+  signalRef.current = signal
+  volumeRef.current = rawAudioVolume
 
   React.useEffect(() => {
     if (!isActive) {
       smoothedEnergyRef.current = 0
-      setSmoothedEnergy(0)
+      setEnergyTick((n) => n + 1)
       return
     }
 
-    let rafId: number | null = null
+    let rafId = 0
     let lastTime = performance.now()
+    let lastPublish = 0
 
     const tick = (now: number) => {
       const dt = Math.min(0.08, (now - lastTime) / 1000)
       lastTime = now
 
       const elapsed = now / 1000
-      // Multi-harmonic acoustic beat wave (3.2Hz + 6.4Hz + 1.6Hz)
       const b1 = Math.sin(elapsed * 3.2) * 0.5 + 0.5
       const b2 = Math.sin(elapsed * 6.4 + 0.9) * 0.3 + 0.3
       const b3 = Math.sin(elapsed * 1.6 + 1.5) * 0.2 + 0.2
       const acousticBeat = b1 * 0.5 + b2 * 0.35 + b3 * 0.15
 
-      // Combine external signal, audio volume, and rhythmic acoustic wave
       let targetEnergy = 0
-      if (signal > 0) {
-        targetEnergy = signal * 1.2
-      } else if (rawAudioVolume > 0.015) {
-        targetEnergy = rawAudioVolume * 1.3 + acousticBeat * 0.25
-      } else if (isActive) {
+      if (signalRef.current > 0) {
+        targetEnergy = signalRef.current * 1.2
+      } else if (volumeRef.current > 0.015) {
+        targetEnergy = volumeRef.current * 1.3 + acousticBeat * 0.25
+      } else {
         targetEnergy = acousticBeat * 0.65
       }
 
-      // Smooth exponential moving average filter for buttery, soft transitions
       const alpha = 1 - Math.exp(-dt * smoothness)
-      const nextSmoothed = smoothedEnergyRef.current + (targetEnergy - smoothedEnergyRef.current) * alpha
-      smoothedEnergyRef.current = nextSmoothed
+      const next =
+        smoothedEnergyRef.current + (targetEnergy - smoothedEnergyRef.current) * alpha
+      smoothedEnergyRef.current = next
 
-      if (Math.abs(nextSmoothed - smoothedEnergy) > 0.005) {
-        setSmoothedEnergy(nextSmoothed)
+      // Publish to React at ~20fps so Orb props update without restarting this loop
+      if (now - lastPublish > 50) {
+        lastPublish = now
+        setEnergyTick((n) => n + 1)
       }
 
       rafId = requestAnimationFrame(tick)
     }
 
     rafId = requestAnimationFrame(tick)
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId)
-    }
-  }, [isActive, signal, rawAudioVolume, smoothedEnergy, smoothness])
+    return () => cancelAnimationFrame(rafId)
+  }, [isActive, smoothness])
 
   // Aggregate audio volume & rhythmic energy with master sensitivity
-  const energy = isActive && reactive
-    ? Math.min(1.2, Math.max(0.15, smoothedEnergy * 2.2 * sensConfig.master))
-    : 0
-
+  void energyTick
+  const energy =
+    isActive && reactive
+      ? Math.min(1.2, Math.max(0.15, smoothedEnergyRef.current * 2.2 * sensConfig.master))
+      : 0
   const resolvedState: 'idle' | 'thinking' =
     explicitState === 'idle'
       ? 'idle'
@@ -277,11 +285,15 @@ function SensitiveOrbPrimitive(props: SensitiveOrbProps, ref?: React.Ref<HTMLDiv
     return activeSpeed + energy * 3.6 * sensConfig.speed
   }, [isActive, energy, customSpeed, idleSpeed, activeSpeed, sensConfig.speed])
 
-  // Dynamic radius pulsating with radius/size sensitivity
+  // Dynamic radius pulsating with radius/size sensitivity (clamped to shader range)
   const computedRadius = React.useMemo(() => {
-    const minR = customRadius !== undefined ? customRadius : baseRadius
+    const minR = Math.min(
+      orbRadiusRange.max,
+      Math.max(orbRadiusRange.min, customRadius !== undefined ? customRadius : baseRadius)
+    )
+    const peak = Math.min(orbRadiusRange.max, Math.max(minR, maxRadius))
     if (!isActive) return minR
-    return Math.min(maxRadius, minR + energy * 0.04 * sensConfig.radius)
+    return Math.min(peak, minR + energy * 0.04 * sensConfig.radius)
   }, [isActive, energy, customRadius, baseRadius, maxRadius, sensConfig.radius])
 
   // Dynamic deformation, optical wave, and luminescence parameters
@@ -290,6 +302,12 @@ function SensitiveOrbPrimitive(props: SensitiveOrbProps, ref?: React.Ref<HTMLDiv
 
     if (sensConfig.contour > 0 && isActive) {
       params.contourDeform = Math.min(1.0, 0.08 + energy * 0.45 * sensConfig.contour)
+    }
+    if (sensConfig.warp > 0 && isActive) {
+      params.warp = Math.min(8, 2.5 + energy * 3.5 * sensConfig.warp)
+    }
+    if (sensConfig.ridge > 0 && isActive) {
+      params.ridgeAmt = Math.min(1.5, 0.35 + energy * 0.85 * sensConfig.ridge)
     }
     if (sensConfig.glow > 0 && isActive) {
       params.edgeGlow = Math.min(1.0, energy * 0.8 * sensConfig.glow)
@@ -307,7 +325,7 @@ function SensitiveOrbPrimitive(props: SensitiveOrbProps, ref?: React.Ref<HTMLDiv
     if (customParams) {
       for (const [k, v] of Object.entries(customParams)) {
         if (v !== undefined) {
-          (params as any)[k] = v
+          ;(params as Record<string, unknown>)[k] = v
         }
       }
     }
@@ -339,24 +357,24 @@ function SensitiveOrbPrimitive(props: SensitiveOrbProps, ref?: React.Ref<HTMLDiv
 /**
  * Consona Interface — Sensitive Orb
  *
- * Audio-reactive and signal-sensitive procedural WebGPU liquid glass orb.
+ * Audio-reactive and signal-sensitive procedural WebGPU orb.
  * Dynamically modulates speed, pulsating radius, fluid vortex warp, edge contour
- * deformation, and optical luminescence in real-time with sub-millisecond smoothness.
+ * deformation, and optical luminescence in real time.
  */
 export const SensitiveOrb = createInterfaceComponent<SensitiveOrbProps, SensitiveOrbSlots>(
   {
     name: 'SensitiveOrb',
     category: 'media',
     description:
-      'Audio-reactive and signal-sensitive procedural WebGPU liquid glass orb with fine-grained motion, warp, contour, and optical sensitivities.',
+      'Audio-reactive and signal-sensitive procedural WebGPU orb with fine-grained motion, warp, contour, and optical sensitivities.',
     version: '1.0.0',
     props: {
       styleName: 'aurora',
       active: true,
       signal: 0,
       sensitivity: 1.0,
-      baseRadius: 0.96,
-      maxRadius: 1.0,
+      baseRadius: 0.72,
+      maxRadius: orbRadiusRange.max,
       idleSpeed: 0.35,
       activeSpeed: 1.8,
       smoothness: 7.5,

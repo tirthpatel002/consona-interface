@@ -1,60 +1,16 @@
-// Glass Liquid — curated flow programs with an optional glass shell.
+// Consona Orb — curated flow programs with an optional refractive glass shell.
 //
-// The local presets use independent spatial models for Siri-like sheets,
-// symmetric colour waves, aurora curtains, frost flow, neural interference,
-// liquid chrome, opal interference, a voice membrane, a blue liquid drop, and
-// a violet molten core, plus a chromatic brushed-metal field. The legacy liquid
-// bank remains below for compatibility with older shared shader
-// code, but is not exposed as an editor preset.
+// Presets use independent spatial models for signal-band sheets, symmetric
+// colour waves, aurora curtains, frost flow, neural interference, liquid
+// chrome, opal interference, a voice membrane, a blue liquid drop, and a
+// violet molten core, plus a chromatic brushed-metal field. A legacy fluid
+// bank remains below for compatibility with older style indexes.
 //
 // When enabled, the shell uses a signed-distance refraction profile around the
 // boundary, asymmetric spectral separation, and two directional edge lights.
-// The fluid is resampled through that profile, so glass changes the image rather
+// The fluid is resampled through that profile so glass changes the image rather
 // than covering it with a translucent white face.
 //
-// ---------------------------------------------------------------------------
-// Analytic optical diffusion without a convolution.
-// ---------------------------------------------------------------------------
-//
-// The source used a thirteen-tap 5px frost blur. This port keeps one fluid
-// evaluation and applies the equivalent gaussian in the frequency domain:
-//
-//  1. **Per-octave attenuation, inside `lqFbm`.** Convolving with a gaussian of
-//     sigma σ scales a component at wavenumber k by exp(-k²σ²/2). An fbm's
-//     octaves have known wavenumbers — octave i sits at 2.03^i times the base —
-//     so each octave's amplitude is scaled by its own factor and the field is
-//     sampled once. The mean is untouched (a blur preserves it), so only the
-//     deviation from 0.5 is scaled and the `s / m` normaliser is unchanged.
-//     Every caller passes the diffusion sigma in its own input units, so detail
-//     attenuation continues to track `zoom`.
-//
-//  2. **Value-space quadrature at every pointwise nonlinearity.** This is the
-//     part that is easy to get wrong. `blur(ridge(f))` is not `ridge(blur(f))`:
-//     attenuating first and ridging after leaves filaments thin and hard where
-//     the blur should have spread them, which is exactly how the earlier
-//     analytic-edge version failed. So `lqFbm` also returns the standard
-//     deviation of the detail the attenuation removed — within a gaussian
-//     window an octave scaled by β contributes variance ∝ (1 - β²), NOT
-//     (1 - β)² — and every nonlinearity applied to that field integrates it
-//     back out with a three-point Gauss-Hermite rule (exact through the fourth
-//     moment). Three evaluations of a function of one float, not three
-//     evaluations of the noise. `lqRidgeS`/`lqStepS`/`lqPowS` below; Nectar's
-//     branch has the fbm inside a `sin`, where the same integral is closed-form
-//     (E[sin(A + cε)] = sin A · exp(-c²σ²/2)), so it damps the sine instead.
-//
-//  3. **One continuous disc edge.** The fluid always reaches the sphere
-//     boundary. Glass changes its sample coordinates near that boundary, so
-//     toggling the shell cannot reveal a second hard-clipped silhouette.
-//
-// Deliberately NOT ported, and why:
-//   - The liquid grain. It sits below display-pixel scale and adds noise rather
-//     than useful optical detail, so Glass Liquid has no Grain parameter.
-//   - The two contact-shadow ellipses under the ball and its outer
-//     `0 26px 50px -24px` drop shadow. The Orbs family cut the source app's
-//     floor at the user's request, and the export paints over `Color.black`.
-//
-// Scalar controls are packed after `time`; the colour bank starts on the next
-// 16-byte boundary. The TypeScript writer mirrors this order exactly.
 struct Uniforms {
   size:           vec2<f32>,
   time:           f32,
@@ -104,12 +60,12 @@ struct Uniforms {
 };
 @group(0) @binding(0) var<uniform> u: Uniforms;
 
-// ── The Orbs edge bank (WGSL) ───────────────────────────────────────────────
+// ── Edge glow bank ─────────────────────────────────────────────────────────
 // Two knobs every orb on the shelf carries: how soft its limb is, and how far
-// it glows past it. See effects/_shared/edge.ts for the contract.
+// it glows past it. See shared edge helpers for the contract.
 //
-// THREE files must agree — edge.wgsl, edge.metal, edge.sksl. Change one, change
-// all three, or the Code tab starts lying about what it ships.
+// THREE files must agree — edge.wgsl, edge-msl, edge-sksl. Change one, change
+// all three, or the shader source starts lying about what it ships.
 
 // How much wider than the shipped feather the Edge softness slider is asking
 // for. 0.005 is the width every orb was authored with, so this returns exactly
@@ -141,18 +97,18 @@ fn mfEdgeGlow(col: vec3<f32>, uv: vec2<f32>, ctr: vec2<f32>, rad: f32,
 }
 
 
-// ── The Orbs palette-ramp bank (WGSL) ───────────────────────────────────────
+// ── Palette-ramp bank ──────────────────────────────────────────────────────
 // The add/remove colour list, evaluated INSIDE the shader so every stop paints
 // its own region of the ball instead of being averaged into a role colour.
 // See effects/_shared/ramp.ts for the contract.
 //
 // THREE files must agree — ramp.wgsl, ramp.metal, ramp.sksl. Change one, change
-// all three, or the Code tab starts lying about what it ships.
+// all three, or the shader source starts lying about what it ships.
 
 // One stop, picked without a dynamic array index.
 //
 // A `var` array indexed by a runtime value is the shape that spills to scratch
-// memory on the GPUs this project cares about (PERFORMANCE.md); twelve selects
+// memory on the GPUs this project cares about (performance notes); twelve selects
 // stay in registers and are branchless on every backend. Written once here so
 // no adopting shader has to.
 fn mfRampPick(idx: f32,
@@ -176,7 +132,7 @@ fn mfRampPick(idx: f32,
 
 // The CYCLIC ramp: `t` wraps, and the last stop runs back into the first.
 //
-// This is the one a generated-colour orb wants. Prism's hue comes from a cosine
+// This is the one a generated-colour orb wants. the hue comes from a cosine
 // of an unbounded scalar field, so its colour has always been periodic — a
 // clamped ramp would flatten every band past t == 1 into one colour and throw
 // the banding away. Wrapping keeps the field's structure exactly and only swaps
@@ -189,7 +145,7 @@ fn mfRampPick(idx: f32,
 // folding `uv / rad` into its uses, and the hash turns that into speckle up to
 // 33/255 — measured, on exactly the first cut of this bank. Straight-line code
 // keeps the untouched render bit-identical. Same reasoning as the early-out
-// guards every orb carries; see the note in orb-prism.wgsl.
+// guards every orb carries; see the note in prism helper.
 fn mfRampCyc(tIn: f32, n: f32,
              s0: vec3<f32>, s1: vec3<f32>, s2:  vec3<f32>, s3:  vec3<f32>,
              s4: vec3<f32>, s5: vec3<f32>, s6:  vec3<f32>, s7:  vec3<f32>,
@@ -292,7 +248,7 @@ const GL_CLEAR_EB: f32 = 1.04;
 
 // ---------------------------------------------------------------------------
 // The sheet's liquid noise bank. Five octaves, gain .5, normalised by the
-// weight sum, and rotated every octave. This is NOT the bank the sheet's Prism
+// weight sum, and rotated every octave. This is NOT the bank the sheet's hue ramp
 // screen uses (a different hash, gain .55, unnormalised, no rotation).
 // ---------------------------------------------------------------------------
 fn lqHash(pIn: vec2<f32>) -> f32 {
@@ -408,7 +364,7 @@ fn glsFinishEmissionFluid(colorIn: vec3<f32>, p: vec2<f32>) -> vec3<f32> {
   return clamp(color, vec3<f32>(0.0), vec3<f32>(1.0));
 }
 
-fn glsSiriBand(q: vec2<f32>, drift: f32, phaseOffset: f32, amplitude: f32,
+fn glsSignalBand(q: vec2<f32>, drift: f32, phaseOffset: f32, amplitude: f32,
                mainY: f32, envelope: f32, softness: f32) -> vec2<f32> {
   let y = amplitude * envelope * sin(q.x * 1.0 + drift + phaseOffset);
   let distanceToLine = abs(q.y - y);
@@ -418,7 +374,7 @@ fn glsSiriBand(q: vec2<f32>, drift: f32, phaseOffset: f32, amplitude: f32,
   return vec2<f32>(line, band);
 }
 
-fn glsSiriFluid(p: vec2<f32>, t: f32) -> vec3<f32> {
+fn glsSignalFluid(p: vec2<f32>, t: f32) -> vec3<f32> {
   // The reference wave is a main sinusoid plus four chromatically separated
   // waves. Their enclosed bands carry colour while the shared crest stays hot.
   let scale = 0.74 + u.zoom * 0.34;
@@ -436,10 +392,10 @@ fn glsSiriFluid(p: vec2<f32>, t: f32) -> vec3<f32> {
   let separation = 1.85 + u.warp * 0.2 + mid * 0.28;
   let softness = 0.035 + (1.0 - u.ridgeAmt) * 0.018 + mid * 0.006;
 
-  let band0 = glsSiriBand(q, drift, -separation, bandAmplitude, mainY, envelope, softness);
-  let band1 = glsSiriBand(q, drift, -separation * 0.34, bandAmplitude, mainY, envelope, softness);
-  let band2 = glsSiriBand(q, drift, separation * 0.34, bandAmplitude, mainY, envelope, softness);
-  let band3 = glsSiriBand(q, drift, separation, bandAmplitude, mainY, envelope, softness);
+  let band0 = glsSignalBand(q, drift, -separation, bandAmplitude, mainY, envelope, softness);
+  let band1 = glsSignalBand(q, drift, -separation * 0.34, bandAmplitude, mainY, envelope, softness);
+  let band2 = glsSignalBand(q, drift, separation * 0.34, bandAmplitude, mainY, envelope, softness);
+  let band3 = glsSignalBand(q, drift, separation, bandAmplitude, mainY, envelope, softness);
   let w0 = band0.x + band0.y;
   let w1 = band1.x + band1.y;
   let w2 = band2.x + band2.y;
@@ -656,7 +612,7 @@ fn glsFrostFluid(p: vec2<f32>, t: f32) -> vec3<f32> {
 
 fn glsVoiceWaveFluid(p: vec2<f32>, t: f32) -> vec3<f32> {
   // A single broad membrane stays phase-coherent across the sphere. Nearby
-  // translucent layers add volume without splitting into separate Siri bands.
+  // translucent layers add volume without splitting into separate signal bands.
   let scale = 0.76 + u.zoom * 0.34;
   let q = p / scale;
   let rimEnvelope = pow(max(1.0 - q.x * q.x, 0.0), 0.72);
@@ -783,7 +739,7 @@ fn glsRefractiveBlobFluid(p: vec2<f32>, t: f32) -> vec3<f32> {
 }
 
 fn glsPresetFluid(p: vec2<f32>, style: i32, t: f32) -> vec3<f32> {
-  if (style == 9) { return glsSiriFluid(p, t); }
+  if (style == 9) { return glsSignalFluid(p, t); }
   if (style == 10) { return glsAuroraFluid(p, t); }
   if (style == 11) { return glsPlasmaFluid(p, t); }
   if (style == 12) { return glsChromeFluid(p, t); }
@@ -840,7 +796,7 @@ fn glsFluid(fu: vec2<f32>, md: i32, t: f32) -> vec3<f32> {
                       lqFbm(pp * 1.1 + vec2<f32>(7.7, -t * 0.07), sw).x);
     let q = pp + u.warp * (w - vec2<f32>(0.5));
     if (md == 0) {
-      // Nectar — a sine band the noise leans on. The fbm is INSIDE the sine, so
+      // Legacy sine-band branch — the fbm is INSIDE the sine, so
       // the removed detail integrates out in closed form rather than by
       // quadrature: E[sin(A + 6e)] = sin(A)·exp(-18·sd²). The second term of
       // the exponent is the same integral for the sine's own `q.x * 7.0`, which
@@ -851,19 +807,19 @@ fn glsFluid(fu: vec2<f32>, md: i32, t: f32) -> vec3<f32> {
       v = mix(v, lqFbm(q * 1.4 + vec2<f32>(t * 0.03), sp * 1.4).x, 0.25);
       fcol = lqRamp(v, cA, cB, cC, cD);
     } else if (md == 1) {
-      // Lumen — two ridged fields multiplied into filaments. The two fields are
+      // Legacy filament — two ridged fields multiplied into filaments. The two fields are
       // independent, so each integrates its own detail out before the product.
       let v = lqRidgeS(lqFbm(q * 1.4 + vec2<f32>(t * 0.06, 0.0), sp * 1.4), u.sharp)
             * lqRidgeS(lqFbm(q * 1.7 - vec2<f32>(0.0, t * 0.05), sp * 1.7), u.sharp);
       fcol = lqRamp(pow(v, 0.7), cA, cB, cC, cD);
     } else if (md == 6) {
-      // Sprig — noise warped by noise, with a ridged edge darkening it.
+      // Legacy warp — noise warped by noise, with a ridged edge darkening it.
       let v = lqFbm(q * 1.3 + vec2<f32>(1.5 * lqFbm(q * 2.6 + vec2<f32>(t * 0.025), sp * 2.6).x), sp * 1.3);
       let edge = lqRidgeS(lqFbm(q * 2.1 + vec2<f32>(7.0), sp * 2.1), 1.3);
       fcol = lqRamp(lqStepS(v, 0.1, 0.9), cA, cB, cC, cD);
       fcol = fcol * (1.0 - 0.18 * edge);
     } else {
-      // Haze and Smoke — the same rising plume at two palettes.
+      // Legacy plume — the same rising plume at two palettes.
       let q2 = q + vec2<f32>(0.0, -t * 0.14);
       let v = lqFbm(q2 * 1.6 + vec2<f32>(2.2 * lqFbm(q2 * 2.4 + vec2<f32>(0.0, -t * 0.05), sp * 2.4).x), sp * 1.6);
       fcol = lqRamp(lqPowS(v, 1.5), cA, cB, cC, cD);
@@ -980,7 +936,7 @@ fn orbGlassLiquidAnim(uv01: vec2<f32>) -> vec4<f32> {
   // everything that reads them — the shape the four sibling orbs of this port
   // need, where branching on `d` after computing it makes the compiler stop
   // folding `uv / rad` into its uses and the moved last bit comes back through
-  // their grain hash as speckle up to 34/255. Glass Liquid has no grain and is
+  // their grain hash as speckle up to 34/255. This shader has no grain and is
   // nearly immune either way: at 1024x1024 this costs under a dozen bytes of a
   // four-million-byte frame, off by 1/255. Those are the branch existing, not a
   // pixel wrongly skipped — a copy of this guard with a threshold it can never
@@ -1046,7 +1002,10 @@ fn orbGlassLiquidAnim(uv01: vec2<f32>) -> vec4<f32> {
   let lum = dot(fcol, vec3<f32>(0.213, 0.715, 0.072));
   let clearSat = clamp(vec3<f32>(lum) + (fcol - vec3<f32>(lum)) * 1.22,
                        vec3<f32>(0.0), vec3<f32>(1.0));
-  var col = glsOver(u.canvasColor.rgb, clearSat, 0.99 * clearFa);
+  var col = clearSat;
+  if (u.canvasColor.a > 0.001) {
+    col = glsOver(u.canvasColor.rgb, clearSat, 0.99 * clearFa * u.canvasColor.a);
+  }
   if (emissionOnly) {
     let signal = max(clearSat.r, max(clearSat.g, clearSat.b));
     let emissionCoverage = smoothstep(0.025, 0.16, signal);
@@ -1091,15 +1050,17 @@ fn orbGlassLiquidAnim(uv01: vec2<f32>) -> vec4<f32> {
   // not paint must be exactly 0 so the page shows through.
   let ballA = 1.0 - smoothstep(0.99 - mfEdgeD(u.edgeSoftness), 1.01 + mfEdgeD(u.edgeSoftness), pd);
   col = clamp(col * max(u.exposure, 0.0), vec3<f32>(0.0), vec3<f32>(1.0)) * ballA;
-  // The Orbs edge bank — the Edge group's Glow. Adding zero is exactly
+  // Edge glow bank. Adding zero is exactly
   // the render this file was diffed against, and zero is the default.
   let edged = mfEdgeGlow(col, uv, vec2<f32>(0.0), contourRad,
                          u.edgeSoftness, u.edgeGlow, u.glowColor.rgb);
   let finalColor = clamp(edged, vec3<f32>(0.0), vec3<f32>(1.0));
   let emissionAlpha = max(finalColor.r, max(finalColor.g, finalColor.b));
   let sphereAlpha = clamp(max(ballA, emissionAlpha), 0.0, 1.0);
+  let canvasA = clamp(u.canvasColor.a, 0.0, 1.0);
+  let coveredAlpha = mix(emissionAlpha, sphereAlpha, canvasA);
   let finalAlpha = select(
-    sphereAlpha,
+    coveredAlpha,
     emissionAlpha,
     emissionOnly,
   );

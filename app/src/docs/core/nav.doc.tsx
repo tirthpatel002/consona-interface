@@ -82,7 +82,7 @@ export const navDoc: ComponentDocSpec = {
                   />
                   <NavLink
                     href="#orb"
-                    title="Liquid Glass Orb"
+                    title="Consona Orb"
                     description="WebGPU interactive particle simulator."
                     icon={<Sparkles className="size-4 text-purple-500" />}
                   />
@@ -207,7 +207,7 @@ export const navDoc: ComponentDocSpec = {
                       />
                       <NavLink
                         href="#orb"
-                        title="Liquid Glass Shader Orb"
+                        title="Consona Shader Orb"
                         description="WebGL particle engine with refraction physics."
                         icon={<Sparkles className="size-4 text-purple-400" />}
                       />

@@ -1,5 +1,5 @@
 export type StyleName =
-  | "siri"
+  | "signal"
   | "voiceWave"
   | "aurora"
   | "frost"
@@ -88,7 +88,7 @@ const basePreset: StylePreset = {
 };
 
 export const stylePresets: Record<StyleName, StylePreset> = {
-  siri: {
+  signal: {
     ...basePreset,
     glassEnabled: true,
     radius: 0.72,
@@ -550,7 +550,7 @@ export const styleNames: readonly StyleName[] = [
   "roseGold",
   "emerald",
   "blueFlame",
-  "siri",
+  "signal",
   "voiceWave",
   "aurora",
   "plasma",
@@ -562,7 +562,7 @@ export const styleNames: readonly StyleName[] = [
 ];
 
 export const styleFlowIndexes: Record<StyleName, number> = {
-  siri: 9,
+  signal: 9,
   voiceWave: 19,
   aurora: 10,
   plasma: 11,
@@ -576,7 +576,7 @@ export const styleFlowIndexes: Record<StyleName, number> = {
   blueDrop: 20,
   violetEmber: 21,
   refractiveBlob: 23,
-  amber: 24,
+  amber: 12,  // chrome fluid path (index 24 had no branch)
 };
 
 export const effectDefaults: OrbParams = {
@@ -590,6 +590,6 @@ export const initialParams: OrbParams = {
 
 for (const name of styleNames) {
   if (!Number.isInteger(styleFlowIndexes[name])) {
-    throw new Error(`预设缺少流场映射：${name}`);
+    throw new Error(`Style "${name}" is missing a flow-index mapping.`);
   }
 }

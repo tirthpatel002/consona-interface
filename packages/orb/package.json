@@ -29,7 +29,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "build": "node ../../scripts/copy-package-assets.mjs --package orb && tsc -p tsconfig.build.json",

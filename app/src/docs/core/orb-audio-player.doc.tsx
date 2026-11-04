@@ -14,7 +14,7 @@ export const orbAudioPlayerDoc: ComponentDocSpec = {
   name: 'Orb Audio Player',
   component: OrbAudioPlayer,
   summary:
-    'Audio-reactive player composite showcasing real-time WebGPU Liquid Glass Orb motion sensitive to audio frequency and volume when no track artwork is provided.',
+    'Audio-reactive player composite showcasing real-time WebGPU Consona Orb motion sensitive to audio frequency and volume when no track artwork is provided.',
   subcomponents: [
     'OrbAudioPlayer.Orb',
     'OrbAudioPlayer.Artwork',
@@ -57,7 +57,7 @@ export const orbAudioPlayerDoc: ComponentDocSpec = {
         type: 'select',
         options: [
           'aurora',
-          'siri',
+          'signal',
           'voiceWave',
           'chrome',
           'plasma',
@@ -136,7 +136,7 @@ export const orbAudioPlayerDoc: ComponentDocSpec = {
     {
       title: 'Default WebGPU Reactive Orb Player',
       description:
-        'When no artwork is specified, the player automatically renders a 60fps WebGPU Liquid Glass Orb that reacts dynamically to the audio volume, pulsating and warping with the rhythm.',
+        'When no artwork is specified, the player automatically renders a 60fps WebGPU Consona Orb that reacts dynamically to the audio volume, pulsating and warping with the rhythm.',
       render: () => (
         <div className="w-full max-w-lg">
           <OrbAudioPlayer

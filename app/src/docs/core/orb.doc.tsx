@@ -53,7 +53,7 @@ export const orbDoc: ComponentDocSpec = {
           'roseGold',
           'emerald',
           'blueFlame',
-          'siri',
+          'signal',
           'voiceWave',
           'aurora',
           'plasma',
@@ -166,9 +166,9 @@ export const orbDoc: ComponentDocSpec = {
       id: 'presets-showcase',
       title: 'Curated Flow Style Programs',
       description:
-        'The Liquid Glass Orb includes 11 carefully crafted shader programs with custom fluid curl dynamics, color ramps, and caustics.',
+        'The Consona Orb includes 11 carefully crafted shader programs with custom fluid curl dynamics, color ramps, and caustics.',
       render: function PresetsShowcase() {
-        const [selectedStyle, setSelectedStyle] = useState<StyleName>('siri')
+        const [selectedStyle, setSelectedStyle] = useState<StyleName>('signal')
         const [orbState, setOrbState] = useState<OrbStateName>('thinking')
 
         return (
@@ -237,7 +237,7 @@ export const orbDoc: ComponentDocSpec = {
           </div>
         )
       },
-      code: `const [style, setStyle] = useState<StyleName>('siri')
+      code: `const [style, setStyle] = useState<StyleName>('signal')
 const [state, setState] = useState<OrbStateName>('thinking')
 
 <Orb
@@ -371,7 +371,7 @@ const [state, setState] = useState<OrbStateName>('thinking')
       description:
         'Control how quickly the orb speeds up when activated vs how gently it calms back down to idle.',
       code: `<Orb
-  styleName="siri"
+  styleName="signal"
   state={isThinking ? 'thinking' : 'idle'}
   activationDuration={0.22}
   transitionDuration={0.65}

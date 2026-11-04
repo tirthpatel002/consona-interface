@@ -9,6 +9,12 @@ export type { GlassPhysicsState, GlassPhysicsEngineOptions } from './engine/glas
 
 // Context, Plugin & Hooks
 export { GlassPlugin } from './plugin'
-export { GlassProvider, useGlassEngine } from './context'
+export {
+  GlassProvider,
+  useGlassEngine,
+  useOptionalGlassEngine,
+  useOptionalGlassEngineState,
+} from './context'
 export type { GlassProviderProps } from './context'
+export { GLASS_DEFAULTS, SURFACE_FUNCTION_INDEX } from './engine/defaults'
 export { useGlassPhysics, useGlass } from './hooks/use-glass-physics'

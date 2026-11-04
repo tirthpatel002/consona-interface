@@ -67,7 +67,7 @@ type IdleStyleProfile = {
 };
 
 const idleProfilesByStyle: Record<StyleName, IdleStyleProfile> = {
-  siri: {
+  signal: {
     numeric: {
       speed: { scale: 0.3 },
       contourDeform: { scale: 0.3 },

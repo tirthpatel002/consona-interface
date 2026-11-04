@@ -48,7 +48,7 @@ export const sensitiveOrbDoc: ComponentDocSpec = {
           'gold',
           'emerald',
           'blueFlame',
-          'siri',
+          'signal',
           'voiceWave',
           'violetEmber',
           'frost',

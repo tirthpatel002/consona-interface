@@ -1292,7 +1292,6 @@ function extractProvidersFromFile(
       [
         'AudioProvider',
         'OnboardingProvider',
-        'OrbProvider',
         'GlassProvider',
         'InteractionProvider',
         'OverlayProvider',

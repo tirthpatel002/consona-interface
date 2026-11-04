@@ -15,15 +15,28 @@ import {
 } from '@consona/interface'
 import type { ComponentDocSpec } from '../types'
 
+/** Local SVG gradient backdrops — no remote third-party hosts. */
 const WALLPAPERS = {
   'Abstract Flow':
-    'https://images.unsplash.com/photo-1789660817213-260c3815de6f?q=80&w=2274&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1e3a5f"/><stop offset="45%" stop-color="#5b4b8a"/><stop offset="100%" stop-color="#c45c26"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="30%" cy="40%" r="220" fill="#6ec6ff" fill-opacity=".25"/><circle cx="70%" cy="65%" r="280" fill="#ff8a5b" fill-opacity=".2"/></svg>'
+    ),
   'Warm Interior':
-    'https://images.unsplash.com/photo-1615874959474-d609969a20ed?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f3e0c7"/><stop offset="100%" stop-color="#b07850"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><rect x="8%" y="18%" width="84%" height="64%" rx="24" fill="#fff" fill-opacity=".18"/></svg>'
+    ),
   'Emerald Organic':
-    'https://images.unsplash.com/photo-1731937817165-1fed94fc03b2?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><defs><radialGradient id="g" cx="50%" cy="40%" r="70%"><stop offset="0%" stop-color="#9be7c4"/><stop offset="55%" stop-color="#1f6f5b"/><stop offset="100%" stop-color="#0b2e27"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>'
+    ),
   'Serene Horizon':
-    'https://images.unsplash.com/photo-1780238461375-7019e513b56f?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#87b7e8"/><stop offset="55%" stop-color="#f0d9b5"/><stop offset="100%" stop-color="#c9a57a"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>'
+    ),
 }
 
 type WallpaperKey = keyof typeof WALLPAPERS
@@ -32,9 +45,9 @@ export const glassDoc: ComponentDocSpec = {
   id: 'glass',
   name: 'Glass',
   subpath: '@consona/interface/glass',
-  badge: 'Liquid Glass Surface',
+  badge: 'Glass Surface',
   summary:
-    "Real-time physics-based liquid glass surface with procedural Snell's law refraction profiles, squircle bezel geometry, specular reflection highlights, and dual-engine SVG / WebGL rendering pipelines.",
+    'Refractive glass surface with procedural rim profiles, squircle bezel geometry, specular highlights, and dual SVG / WebGL rendering pipelines.',
   subcomponents: ['Glass'],
   playground: {
     defaultHeight: 'tall',
@@ -132,7 +145,7 @@ export const glassDoc: ComponentDocSpec = {
         max: 3.0,
         step: 0.05,
         defaultValue: 2.6,
-        description: "Snell's law refraction index (1.0 = air, 1.5 = standard glass, 2.4+ = diamond liquid).",
+        description: 'Index of refraction (1.0 = air, 1.5 = standard glass, 2.4+ = dense crystal).',
       },
       {
         name: 'scaleRatio',
@@ -375,10 +388,10 @@ export const glassDoc: ComponentDocSpec = {
 
                 <div>
                   <h4 className="text-sm font-medium tracking-tight text-white drop-shadow-sm">
-                    Liquid Glass
+                    Glass
                   </h4>
                   <p className="text-[12px] text-white/70 mt-0.5 leading-normal">
-                    Refractive optical layer with Snell's law dispersion.
+                    Refractive optical layer with IOR-driven dispersion.
                   </p>
                 </div>
 
@@ -406,7 +419,7 @@ export const glassDoc: ComponentDocSpec = {
   style={{ width: 340, height: 220 }}
 >
   <div className="p-5 text-white">
-    <h4 className="text-sm font-medium">Liquid Glass</h4>
+    <h4 className="text-sm font-medium">Glass</h4>
     <p className="text-xs text-white/70 mt-1">Refractive optical surface</p>
   </div>
 </Glass>`,
