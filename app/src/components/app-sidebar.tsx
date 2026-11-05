@@ -426,9 +426,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               onClick={() => navigate('/')}
               className="flex items-center gap-2.5 cursor-pointer select-none"
             >
-              <div className="w-7 h-7 shrink-0 rounded-base bg-primary text-primary-fg flex items-center justify-center font-black text-sm shadow-xs">
-                C
-              </div>
+              <img
+                src="/icons/consona/consona-black.png"
+                alt=""
+                className="w-7 h-7 shrink-0 object-contain dark:hidden"
+              />
+              <img
+                src="/icons/consona/consona-white.png"
+                alt="Consona"
+                className="w-7 h-7 shrink-0 object-contain hidden dark:block"
+              />
               {!isCollapsed && (
                 <div className="overflow-hidden">
                   <div className="font-extrabold text-sm text-fg tracking-tight truncate">

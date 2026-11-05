@@ -122,7 +122,8 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 5174,
+    port: 5180,
+    strictPort: true,
     allowedHosts: true,
     fs: {
       allow: [demoRoot, interfaceRoot, repoRoot, packagesRoot, toolsRegistry],

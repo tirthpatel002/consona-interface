@@ -2,6 +2,58 @@
 
 npm workspaces monorepo. UI source lives in `packages/*/src`. Registry tooling is in `tools/registry/` and writes JSON to `/registry`.
 
+## Studio
+
+Screenshots from the Consona Interface workbench (`assets/studio`).
+
+### Date and time
+
+![DateTime range field with calendar and time wheels](assets/studio/preview/studio-01.jpg)
+
+### Data table
+
+![DataTable playground with search, health badges, and property controls](assets/studio/preview/studio-02.jpg)
+
+### Orb
+
+![Orb playground in dark mode with chrome preset and glass controls](assets/studio/preview/studio-03.jpg)
+
+### Charts
+
+![Area charts and a Sankey revenue pipeline](assets/studio/preview/studio-04.jpg)
+
+### Map
+
+![Globe map with a world tour and city markers](assets/studio/preview/studio-05.jpg)
+
+### Drag and drop
+
+![DndBoard timeline columns and a product engineering board](assets/studio/preview/studio-06.jpg)
+
+### Onboarding
+
+![Getting started checklist synced with the onboarding context](assets/studio/preview/studio-07.jpg)
+
+### Media
+
+![Audio player card and pill players](assets/studio/preview/studio-08.jpg)
+
+### Registrar
+
+![Registrar catalog with component counts and entity cards](assets/studio/preview/studio-09.jpg)
+
+### Registrar CLI
+
+![Registrar command palette and interactive catalog session](assets/studio/preview/studio-10.jpg)
+
+### Theme studio
+
+![Theme Studio curated palettes](assets/studio/preview/studio-11.jpg)
+
+### Color
+
+![Gradient and solid color pickers](assets/studio/preview/studio-12.jpg)
+
 ## Install
 
 ```bash
